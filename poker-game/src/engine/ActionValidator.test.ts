@@ -1,7 +1,7 @@
 // engine/ActionValidator.test.ts — 行动验证测试
 import { describe, it, expect } from 'vitest'
 import type { GameState, Player } from '@/engine/types'
-import { GamePhase, Rank, Suit } from '@/engine/types'
+import { GamePhase } from '@/engine/types'
 import {
   validateFold,
   validateCheck,
@@ -11,7 +11,6 @@ import {
   validateAction,
   getAvailableActions,
   getCurrentBetToCall,
-  hasBigBlindOption,
 } from '@/engine/ActionValidator'
 
 /**
@@ -237,9 +236,9 @@ describe('Raise (加注)', () => {
       minRaise: 20,
     })
 
-    // 最低需要加注到 100 + 20 = 120，即额外下注 70
+    // 最低需要加注到 100 + 20 = 120
     const result = validateRaise(
-      { type: 'RAISE', playerId: player.id, timestamp: Date.now(), amount: 70 },
+      { type: 'RAISE', playerId: player.id, timestamp: Date.now(), amount: 120 },
       player,
       gameState
     )
@@ -255,9 +254,9 @@ describe('Raise (加注)', () => {
       minRaise: 20,
     })
 
-    // 只加注 20（到 70），但最低需要到 120
+    // 只加注到 110，但最低需要到 120
     const result = validateRaise(
-      { type: 'RAISE', playerId: player.id, timestamp: Date.now(), amount: 20 },
+      { type: 'RAISE', playerId: player.id, timestamp: Date.now(), amount: 110 },
       player,
       gameState
     )
@@ -275,7 +274,7 @@ describe('Raise (加注)', () => {
     })
 
     const result = validateRaise(
-      { type: 'RAISE', playerId: player.id, timestamp: Date.now(), amount: 100 },
+      { type: 'RAISE', playerId: player.id, timestamp: Date.now(), amount: 120 },
       player,
       gameState
     )
@@ -302,7 +301,7 @@ describe('Raise (加注)', () => {
     })
 
     const result = validateRaise(
-      { type: 'RAISE', playerId: player.id, timestamp: Date.now(), amount: 70 },
+      { type: 'RAISE', playerId: player.id, timestamp: Date.now(), amount: 120 },
       player,
       gameState,
       { maxRaisesPerRound: 1 } // 只允许 1 次加注
