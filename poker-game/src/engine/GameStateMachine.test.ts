@@ -5,7 +5,7 @@ import { settleRound } from '@/engine/GameStateMachine'
 
 function card(suit: Suit, rank: Rank): Card {
   return { suit, rank, id: `${rank}${suit}` }
-}
+})
 
 function createPlayer(overrides: Partial<Player>): Player {
   return {
