@@ -2,7 +2,6 @@
 import { useEffect } from 'react'
 import { useGameState, useGameActions } from '@/store/gameStore'
 import { npcActionScheduler } from '@/ai/NPCActionScheduler'
-import type { PlayerAction } from '@/engine/types'
 
 /**
  * Hook 监听当前玩家变化，自动调度 NPC 行动
@@ -22,7 +21,7 @@ export function useNPCScheduler() {
         currentPlayer,
         gameState,
         (action) => {
-          submitAction(action as PlayerAction)
+          submitAction(action)
         }
       )
     }

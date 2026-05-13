@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import type { ActionType } from '@/engine/types'
 import { useGameState, useGameActions } from '@/store/gameStore'
-import { getAvailableActions } from '@/engine/ActionValidator'
+import { getAvailableActions, getCurrentBetToCall } from '@/engine/ActionValidator'
 import { RaiseSlider } from './RaiseSlider'
 
 export function ActionPanel() {
@@ -26,7 +26,8 @@ export function ActionPanel() {
     )
   }
 
-  const availableActions = getAvailableActions(gameState, currentPlayer.id)
+  const availableActions = getAvailableActions(currentPlayer, gameState)
+  const currentBetToCall = getCurrentBetToCall(gameState)
 
   const handleAction = (type: ActionType, amount?: number) => {
     submitAction({
@@ -40,7 +41,7 @@ export function ActionPanel() {
 
   const handleRaise = () => {
     setShowRaiseSlider(true)
-    setRaiseAmount(currentPlayer.currentBet + gameState.minRaise)
+    setRaiseAmount(currentBetToCall + gameState.minRaise)
   }
 
   const confirmRaise = () => {
@@ -64,7 +65,7 @@ export function ActionPanel() {
       {showRaiseSlider ? (
         <div className="space-y-4">
           <RaiseSlider
-            minRaise={gameState.minRaise}
+            minRaiseTotal={currentBetToCall + gameState.minRaise}
             maxChips={currentPlayer.chips}
             currentBet={currentPlayer.currentBet}
             value={raiseAmount}
