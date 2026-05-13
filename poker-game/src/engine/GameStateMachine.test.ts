@@ -22,7 +22,7 @@ function createPlayer(overrides: Partial<Player>): Player {
     seatIndex: 0,
     ...overrides,
   }
-})
+}
 
 function createState(players: Player[]): GameState {
   return {
@@ -83,4 +83,4 @@ describe('settleRound', () => {
     expect(settled.players.reduce((sum, player) => sum + player.chips, 0)).toBe(300)
     expect(settled.pots.map(pot => pot.amount)).toEqual([150, 100, 50])
   })
-}
+})
