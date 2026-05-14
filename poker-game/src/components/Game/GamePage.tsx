@@ -1,5 +1,5 @@
 // components/Game/GamePage.tsx — 游戏主页面
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PokerTable } from '@/components/Table/PokerTable'
 import { ActionPanel } from '@/components/Actions/ActionPanel'
@@ -15,7 +15,6 @@ export function GamePage() {
   const gameState = useGameState()
   const { initGame, startRound, nextRound } = useGameActions()
   const { setShowResultModal, actionLogVisible } = useUiStore()
-  const [isLoading, setIsLoading] = useState(true)
   
   // NPC 调度
   const { isNPCThinking } = useNPCScheduler()
@@ -33,7 +32,6 @@ export function GamePage() {
     try {
       const settings: GameSettings = JSON.parse(settingsJson)
       initGame(settings)
-      setIsLoading(false)
     } catch (error) {
       console.error('Failed to load game settings:', error)
       navigate('/lobby')
@@ -56,7 +54,7 @@ export function GamePage() {
     nextRound()
   }
 
-  if (isLoading || !gameState) {
+  if (!gameState) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-green-900 to-green-950 flex items-center justify-center">
         <div className="text-white text-xl">正在加载游戏...</div>
