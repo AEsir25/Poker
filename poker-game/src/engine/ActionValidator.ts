@@ -14,13 +14,13 @@ export interface ActionValidationResult {
  * 获取当前需要匹配的最低下注额
  */
 export function getCurrentBetToCall(gameState: GameState): number {
-  const activePlayers = gameState.players.filter(
-    (p) => p.isActive && !p.isFolded && !p.isAllIn
+  const contenders = gameState.players.filter(
+    (p) => p.isActive && !p.isFolded
   )
 
-  if (activePlayers.length === 0) return 0
+  if (contenders.length === 0) return 0
 
-  return Math.max(...activePlayers.map((p) => p.currentBet))
+  return Math.max(...contenders.map((p) => p.currentBet))
 }
 
 /**
@@ -77,7 +77,7 @@ export function hasBigBlindOption(gameState: GameState): boolean {
  * Fold 任何时候都允许
  */
 export function validateFold(
-  action: PlayerAction,
+  _action: PlayerAction,
   player: Player,
   _gameState: GameState
 ): ActionValidationResult {
@@ -110,7 +110,7 @@ export function validateFold(
  * 条件：当前街无未匹配注；或 Pre-flop 大盲位且无人加注（Option）
  */
 export function validateCheck(
-  action: PlayerAction,
+  _action: PlayerAction,
   player: Player,
   gameState: GameState
 ): ActionValidationResult {
@@ -142,11 +142,11 @@ export function validateCheck(
  * 条件：存在未匹配注；筹码不足时自动转为 All-in
  */
 export function validateCall(
-  action: PlayerAction,
+  _action: PlayerAction,
   player: Player,
   gameState: GameState
 ): ActionValidationResult {
-  if (!player.isActive || player.isFolded) {
+  if (!player.isActive || player.isFolded || player.isAllIn) {
     return {
       isValid: false,
       errorMessage: '玩家不能跟注',
@@ -193,7 +193,8 @@ export function validateRaise(
     }
   }
 
-  const totalBetAfterRaise = player.currentBet + action.amount
+  const totalBetAfterRaise = action.amount
+  const raiseIncrement = totalBetAfterRaise - player.currentBet
 
   // 加注后总额必须 ≥ 当前最高注 + 最小加注增量
   if (totalBetAfterRaise < maxBet + minRaise) {
@@ -204,7 +205,7 @@ export function validateRaise(
   }
 
   // 检查筹码是否足够
-  if (player.chips < action.amount) {
+  if (raiseIncrement <= 0 || player.chips < raiseIncrement) {
     return {
       isValid: false,
       errorMessage: '筹码不足',
@@ -233,7 +234,7 @@ export function validateRaise(
  * 条件：任何时候都可以全押
  */
 export function validateAllIn(
-  action: PlayerAction,
+  _action: PlayerAction,
   player: Player,
   _gameState: GameState
 ): ActionValidationResult {

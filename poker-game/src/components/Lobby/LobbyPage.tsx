@@ -1,7 +1,8 @@
 // components/Lobby/LobbyPage.tsx — 大厅页
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { GameSettings } from './GameSettings'
+import { GameSettings as GameSettingsForm } from './GameSettings'
+import type { GameSettings } from '@/engine/types'
 
 export function LobbyPage() {
   const navigate = useNavigate()
@@ -29,7 +30,7 @@ export function LobbyPage() {
           <p className="text-green-300">Texas Hold'em Poker</p>
         </div>
 
-        <GameSettings onSubmit={handleStartGame} isLoading={isStarting} />
+        <GameSettingsForm onSubmit={handleStartGame} isLoading={isStarting} />
 
         <div className="mt-6 text-center text-green-400 text-sm">
           <p>单人对抗 NPC 离线游戏</p>
