@@ -1,7 +1,7 @@
 // engine/RoundController.ts — 轮次控制器
-import type { GameState, Player, PlayerAction, ActionLogEntry } from './types'
+import type { GameState, Player, PlayerAction, ActionLogEntry, Pot } from './types'
 import { GamePhase } from './types'
-import { validateAction, getAvailableActions } from './ActionValidator'
+import { getAvailableActions } from './ActionValidator'
 import { calculatePots } from './PotCalculator'
 
 /**
@@ -70,9 +70,9 @@ export function processPlayerAction(
     potAfter: pots.reduce((sum, p) => sum + p.amount, 0),
   }
 
-  let updatedPlayers = [...players]
+  const updatedPlayers = [...players]
   let updatedPots = [...pots]
-  let updatedPlayer = { ...player }
+  const updatedPlayer = { ...player }
 
   switch (action.type) {
     case 'FOLD':
@@ -151,20 +151,7 @@ function getCallAmount(state: GameState, player: Player): number {
  * 从玩家状态计算底池
  */
 function calculatePotsFromPlayers(players: Player[]): Pot[] {
-  const activePlayers = players.filter(p => p.isActive && p.totalBetThisHand > 0)
-  
-  if (activePlayers.length === 0) {
-    return []
-  }
-
-  // 简化版：直接计算总底池
-  const totalAmount = activePlayers.reduce((sum, p) => sum + p.totalBetThisHand, 0)
-  
-  return [{
-    amount: totalAmount,
-    eligiblePlayerIds: activePlayers.filter(p => !p.isFolded).map(p => p.id),
-    isMainPot: true,
-  }]
+  return calculatePots(players).pots
 }
 
 /**
@@ -176,22 +163,23 @@ export function isRoundComplete(
 ): boolean {
   const { players, phase, dealerIndex } = state
 
-  // 获取活跃玩家（未弃牌、未 All-in）
-  const activePlayers = players.filter(
-    p => p.isActive && !p.isFolded && !p.isAllIn
+  // 获取仍在本手牌中的玩家，以及仍可继续行动的玩家
+  const contenders = players.filter(
+    p => p.isActive && !p.isFolded
   )
+  const actionablePlayers = contenders.filter(p => !p.isAllIn)
 
-  // 如果只有一个或没有活跃玩家，轮次结束
-  if (activePlayers.length <= 1) {
+  // 如果只剩一名玩家或无人可行动，轮次结束
+  if (contenders.length <= 1 || actionablePlayers.length === 0) {
     return true
   }
 
-  // 检查所有活跃玩家的下注是否相等
-  const bets = activePlayers.map(p => p.currentBet)
-  const allBetsEqual = bets.every(b => b === bets[0])
+  // 未 All-in 的玩家必须匹配包含 All-in 下注在内的最高注
+  const maxBet = Math.max(...contenders.map(p => p.currentBet))
+  const allActionableBetsCovered = actionablePlayers.every(p => p.currentBet === maxBet)
 
   // 检查所有活跃玩家是否都已行动
-  const allActed = activePlayers.every(p => {
+  const allActed = actionablePlayers.every(p => {
     const tracker = trackers.get(p.id)
     return tracker?.hasActed ?? false
   })
@@ -202,7 +190,6 @@ export function isRoundComplete(
     const bbPlayer = players[bbIndex]
     
     // 如果是大盲位，且无人加注，需要给大盲 Option
-    const maxBet = Math.max(...players.map(p => p.currentBet))
     const bbTracker = trackers.get(bbPlayer.id)
     
     // 大盲未被加注且未行动，轮次未结束
@@ -211,7 +198,7 @@ export function isRoundComplete(
     }
   }
 
-  return allBetsEqual && allActed
+  return allActionableBetsCovered && allActed
 }
 
 /**
@@ -267,7 +254,7 @@ export function getCurrentAvailableActions(state: GameState): ReturnType<typeof 
     return []
   }
   
-  return getAvailableActions(state, currentPlayer.id)
+  return getAvailableActions(currentPlayer, state)
 }
 
 /**

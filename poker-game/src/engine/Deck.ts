@@ -78,8 +78,16 @@ export class Deck {
 /**
  * 创建一个已洗牌的新牌组
  */
-export function createShuffledDeck(): Deck {
+export function createShuffledDeck(): Card[] {
   const deck = new Deck()
   deck.shuffle()
-  return deck
+  return deck.getCards()
+}
+
+/**
+ * 从数组牌组发 N 张牌，并返回剩余牌组
+ */
+export function dealCards(deck: Card[], count: number): { card: Card[]; remainingDeck: Card[] } {
+  const { dealt, remaining } = new Deck(deck).deal(count)
+  return { card: dealt, remainingDeck: remaining }
 }
