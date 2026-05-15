@@ -15,7 +15,7 @@ export interface ActionValidationResult {
  */
 export function getCurrentBetToCall(gameState: GameState): number {
   const activePlayers = gameState.players.filter(
-    (p) => p.isActive && !p.isFolded && !p.isAllIn
+    (p) => p.isActive && !p.isFolded
   )
 
   if (activePlayers.length === 0) return 0
@@ -28,7 +28,7 @@ export function getCurrentBetToCall(gameState: GameState): number {
  */
 export function areBetsEqual(gameState: GameState): boolean {
   const activePlayers = gameState.players.filter(
-    (p) => p.isActive && !p.isFolded && !p.isAllIn
+    (p) => p.isActive && !p.isFolded
   )
 
   if (activePlayers.length <= 1) return true
@@ -54,22 +54,11 @@ export function hasBigBlindOption(gameState: GameState): boolean {
     return false
   }
 
-  // 大盲位尚未行动的标准：大盲位当前下注额小于大盲金额
-  // （因为初始时大盲会被扣盲注，这里检查的是"是否还需要额外行动"）
-  // 如果当前下注额等于大盲，说明已经下了盲注但还没有过牌/加注的机会
-  const hasActed = bigBlindPlayer.currentBet >= gameState.bigBlind
-
   // 找到最高下注额
   const maxBet = getCurrentBetToCall(gameState)
 
-  // 大盲位需要额外行动的情况：最高下注 > 大盲位当前下注
-  // 如果最高下注等于大盲位当前下注，说明还没有人加注，大盲有 Option
-  if (hasActed && maxBet === bigBlindPlayer.currentBet) {
-    // 确认其他人都没有加注
-    return areBetsEqual(gameState)
-  }
-
-  return false
+  // 最高注仍等于大盲已投入金额时，无人加注，大盲保留过牌 Option。
+  return maxBet === bigBlindPlayer.currentBet
 }
 
 /**
@@ -193,7 +182,8 @@ export function validateRaise(
     }
   }
 
-  const totalBetAfterRaise = player.currentBet + action.amount
+  const totalBetAfterRaise = action.amount
+  const additionalAmount = totalBetAfterRaise - player.currentBet
 
   // 加注后总额必须 ≥ 当前最高注 + 最小加注增量
   if (totalBetAfterRaise < maxBet + minRaise) {
@@ -204,7 +194,7 @@ export function validateRaise(
   }
 
   // 检查筹码是否足够
-  if (player.chips < action.amount) {
+  if (additionalAmount <= 0 || player.chips < additionalAmount) {
     return {
       isValid: false,
       errorMessage: '筹码不足',

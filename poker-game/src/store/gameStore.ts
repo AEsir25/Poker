@@ -141,10 +141,10 @@ export const useGameStore = create<GameStore>()(
         return
       }
 
-      const validation = validateAction(gameState, action.playerId, action)
-      if (!validation.valid) {
+      const validation = validateAction(action, currentPlayer, gameState)
+      if (!validation.isValid) {
         set((state) => {
-          state.error = validation.reason || '行动无效'
+          state.error = validation.errorMessage || '行动无效'
         })
         return
       }

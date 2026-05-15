@@ -41,7 +41,7 @@ export class RuleBasedDecisionEngine implements INPCDecisionEngine {
     thoughtLog.push(`底池赔率: ${(potOdds * 100).toFixed(0)}%`)
 
     // 3. 获取可用行动
-    const availableActions = getAvailableActions(gameState, player.id)
+    const availableActions = getAvailableActions(player, gameState)
     thoughtLog.push(`可用行动: ${availableActions.join(', ')}`)
 
     // 4. 位置加成（越靠后位置加成越高）
@@ -124,7 +124,7 @@ export class RuleBasedDecisionEngine implements INPCDecisionEngine {
     const minRaiseTotal = maxBet + minRaise
     
     // 最大加注额 = 玩家全部筹码
-    const maxRaiseTotal = maxBet + player.chips
+    const maxRaiseTotal = player.currentBet + player.chips
 
     // 基于 skill 的加注倍率
     const raiseMultiplier = skill.params.raiseMultiplier
