@@ -1,7 +1,7 @@
 // engine/RoundController.ts — 轮次控制器
 import type { GameState, Player, PlayerAction, ActionLogEntry } from './types'
 import { GamePhase } from './types'
-import { validateAction, getAvailableActions } from './ActionValidator'
+import { getAvailableActions } from './ActionValidator'
 import { calculatePots } from './PotCalculator'
 
 /**
@@ -70,8 +70,8 @@ export function processPlayerAction(
     potAfter: pots.reduce((sum, p) => sum + p.amount, 0),
   }
 
-  let updatedPlayers = [...players]
-  let updatedPlayer = { ...player }
+  const updatedPlayers = [...players]
+  const updatedPlayer = { ...player }
 
   switch (action.type) {
     case 'FOLD':
