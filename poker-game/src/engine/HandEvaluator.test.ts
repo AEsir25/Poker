@@ -444,7 +444,7 @@ describe('Tie (平局)', () => {
 
 // ==================== 边界测试 ====================
 describe('Edge Cases (边界情况)', () => {
-  it('evaluateHand 应要求恰好 7 张牌', () => {
+  it('evaluateHand 应支持 5 到 7 张牌', () => {
     const sixCards = [
       card(Suit.Hearts, Rank.Ace),
       card(Suit.Spades, Rank.Ace),
@@ -454,7 +454,8 @@ describe('Edge Cases (边界情况)', () => {
       card(Suit.Spades, Rank.Ten),
     ]
 
-    expect(() => evaluateHand(sixCards as any)).toThrow('exactly 7 cards')
+    expect(evaluateHand(sixCards).rank).toBe(HandRank.STRAIGHT)
+    expect(() => evaluateHand(sixCards.slice(0, 4))).toThrow('5 to 7 cards')
   })
 
   it('compareHands 应处理空数组', () => {

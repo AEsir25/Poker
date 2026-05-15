@@ -1,9 +1,9 @@
 // engine/GameStateMachine.ts — 游戏阶段状态机
-import type { GameState, Player, Pot, Card as CardType } from './types'
+import type { GameState, Player, Pot } from './types'
 import { GamePhase } from './types'
 import { createShuffledDeck, dealCards } from './Deck'
-import { calculatePots } from './PotCalculator'
-import { evaluateAndCompare } from './HandEvaluator'
+import { allocatePots } from './PotCalculator'
+import { compareHands } from './HandEvaluator'
 
 /**
  * 游戏状态机 — 管理阶段转换
@@ -73,8 +73,13 @@ export function startNewRound(state: GameState): GameState {
 
   // 设置当前行动玩家（大盲后一位）
   let currentPlayerIndex = (bbIndex + 1) % players.length
-  while (!players[currentPlayerIndex].isActive || players[currentPlayerIndex].isAllIn) {
+  let attempts = 0
+  while (
+    (!players[currentPlayerIndex].isActive || players[currentPlayerIndex].isAllIn) &&
+    attempts < players.length
+  ) {
     currentPlayerIndex = (currentPlayerIndex + 1) % players.length
+    attempts++
   }
 
   return {
@@ -98,7 +103,7 @@ export function startNewRound(state: GameState): GameState {
  * 推进阶段：PRE_FLOP → FLOP → TURN → RIVER → SHOWDOWN
  */
 export function advancePhase(state: GameState): GameState {
-  const { phase, deck, players, pots } = state
+  const { phase, deck } = state
 
   switch (phase) {
     case GamePhase.PRE_FLOP: {
@@ -208,26 +213,32 @@ export function settleRound(state: GameState): GameState {
     }
   }
 
-  // 多人摊牌：评估手牌
-  const playerHands = activePlayers.map(player => ({
-    player,
-    cards: [...player.holeCards, ...communityCards],
-  }))
+  const cardsByPlayerId = new Map(
+    activePlayers.map(player => [
+      player.id,
+      [...player.holeCards, ...communityCards],
+    ])
+  )
 
-  // 比较手牌，找出赢家
-  const winners = evaluateAndCompare(playerHands.map(h => h.cards))
-  const winnerIds = winners.map(w => playerHands[w.winnerIndex].player.id)
+  const winnersByPot = pots.map((pot) => {
+    const eligiblePlayers = pot.eligiblePlayerIds
+      .map(playerId => activePlayers.find(player => player.id === playerId))
+      .filter((player): player is Player => Boolean(player))
 
-  // 分配底池
-  const totalPot = pots.reduce((sum, pot) => sum + pot.amount, 0)
-  const winAmountPerPlayer = Math.floor(totalPot / winnerIds.length)
+    const winningIndexes = compareHands(
+      eligiblePlayers.map(player => cardsByPlayerId.get(player.id) ?? [])
+    )
 
-  const updatedPlayers = players.map(p => {
-    if (winnerIds.includes(p.id)) {
-      return { ...p, chips: p.chips + winAmountPerPlayer }
-    }
-    return p
+    return winningIndexes.map(index => eligiblePlayers[index].id)
   })
+
+  const allocations = allocatePots(pots, winnersByPot)
+  const winnerIds = Array.from(new Set(winnersByPot.flat()))
+
+  const updatedPlayers = players.map(p => ({
+    ...p,
+    chips: p.chips + (allocations.get(p.id) || 0),
+  }))
 
   return {
     ...state,
