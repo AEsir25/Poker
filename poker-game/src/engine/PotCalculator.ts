@@ -30,6 +30,11 @@ export function calculatePots(players: Player[]): PotCalculationResult {
     return { pots: [], totalPot: 0 }
   }
 
+  const eligibleContenders = contributingPlayers.filter((p) => !p.isFolded)
+  if (eligibleContenders.length === 0) {
+    return { pots: [], totalPot: 0 }
+  }
+
   // 获取所有玩家在本手的总下注额
   const bets = contributingPlayers.map((p) => p.totalBetThisHand)
 
