@@ -386,7 +386,7 @@ describe('validateAction (统一验证)', () => {
     const gameState = createGameState()
 
     const result = validateAction(
-      { type: 'UNKNOWN', playerId: player.id, timestamp: Date.now() } as PlayerAction,
+      { type: 'UNKNOWN', playerId: player.id, timestamp: Date.now() } as unknown as PlayerAction,
       player,
       gameState
     )
