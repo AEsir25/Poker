@@ -83,3 +83,17 @@ export function createShuffledDeck(): Deck {
   deck.shuffle()
   return deck
 }
+
+/**
+ * 从数组牌组顶部发 N 张牌，返回发出的牌和剩余牌组。
+ */
+export function dealCards(deck: Card[], count: number): { card: Card[]; remainingDeck: Card[] } {
+  if (count < 0 || count > deck.length) {
+    throw new Error(`Invalid deal count: ${count}. Remaining cards: ${deck.length}`)
+  }
+
+  return {
+    card: deck.slice(0, count),
+    remainingDeck: deck.slice(count),
+  }
+}
