@@ -77,7 +77,7 @@ export function hasBigBlindOption(gameState: GameState): boolean {
  * Fold 任何时候都允许
  */
 export function validateFold(
-  action: PlayerAction,
+  _action: PlayerAction,
   player: Player,
   _gameState: GameState
 ): ActionValidationResult {
@@ -110,7 +110,7 @@ export function validateFold(
  * 条件：当前街无未匹配注；或 Pre-flop 大盲位且无人加注（Option）
  */
 export function validateCheck(
-  action: PlayerAction,
+  _action: PlayerAction,
   player: Player,
   gameState: GameState
 ): ActionValidationResult {
@@ -142,7 +142,7 @@ export function validateCheck(
  * 条件：存在未匹配注；筹码不足时自动转为 All-in
  */
 export function validateCall(
-  action: PlayerAction,
+  _action: PlayerAction,
   player: Player,
   gameState: GameState
 ): ActionValidationResult {
@@ -241,7 +241,7 @@ export function validateRaise(
  * 条件：任何时候都可以全押
  */
 export function validateAllIn(
-  action: PlayerAction,
+  _action: PlayerAction,
   player: Player,
   _gameState: GameState
 ): ActionValidationResult {

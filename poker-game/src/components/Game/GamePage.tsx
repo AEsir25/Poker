@@ -14,7 +14,7 @@ export function GamePage() {
   const navigate = useNavigate()
   const gameState = useGameState()
   const { initGame, startRound, nextRound } = useGameActions()
-  const { showResultModal, setShowResultModal, actionLogVisible } = useUiStore()
+  const { setShowResultModal, actionLogVisible } = useUiStore()
   const [isLoading, setIsLoading] = useState(true)
   
   // NPC 调度

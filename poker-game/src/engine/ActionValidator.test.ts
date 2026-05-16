@@ -1,7 +1,7 @@
 // engine/ActionValidator.test.ts — 行动验证测试
 import { describe, it, expect } from 'vitest'
 import type { GameState, Player } from '@/engine/types'
-import { GamePhase, Rank, Suit } from '@/engine/types'
+import { GamePhase } from '@/engine/types'
 import {
   validateFold,
   validateCheck,
@@ -11,7 +11,6 @@ import {
   validateAction,
   getAvailableActions,
   getCurrentBetToCall,
-  hasBigBlindOption,
 } from '@/engine/ActionValidator'
 
 /**
