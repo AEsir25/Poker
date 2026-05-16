@@ -296,6 +296,27 @@ export function evaluateHand(sevenCards: Card[]): HandEvaluation {
 }
 
 /**
+ * 评估 5-7 张可用牌中的最佳 5 张牌。
+ */
+export function evaluateBestHand(cards: Card[]): HandEvaluation {
+  if (cards.length < 5 || cards.length > 7) {
+    throw new Error(`evaluateBestHand requires 5 to 7 cards, got ${cards.length}`)
+  }
+
+  const combinations = cards.length === 5 ? [cards] : generateCombinations(cards, 5)
+  let bestHand: HandEvaluation | null = null
+
+  for (const combo of combinations) {
+    const evaluation = evaluateFiveCards(combo)
+    if (!bestHand || evaluation.score > bestHand.score) {
+      bestHand = evaluation
+    }
+  }
+
+  return bestHand!
+}
+
+/**
  * 比较多个玩家的手牌，返回赢家索引列表（支持平局）
  */
 export function compareHands(playersCards: Card[][]): number[] {

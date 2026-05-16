@@ -193,7 +193,15 @@ export function validateRaise(
     }
   }
 
-  const totalBetAfterRaise = player.currentBet + action.amount
+  const totalBetAfterRaise = action.amount
+  const additionalChipsNeeded = totalBetAfterRaise - player.currentBet
+
+  if (additionalChipsNeeded <= 0) {
+    return {
+      isValid: false,
+      errorMessage: '加注金额必须高于当前下注',
+    }
+  }
 
   // 加注后总额必须 ≥ 当前最高注 + 最小加注增量
   if (totalBetAfterRaise < maxBet + minRaise) {
@@ -204,7 +212,7 @@ export function validateRaise(
   }
 
   // 检查筹码是否足够
-  if (player.chips < action.amount) {
+  if (player.chips < additionalChipsNeeded) {
     return {
       isValid: false,
       errorMessage: '筹码不足',

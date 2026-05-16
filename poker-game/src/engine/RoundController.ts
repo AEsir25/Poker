@@ -1,7 +1,7 @@
 // engine/RoundController.ts — 轮次控制器
-import type { GameState, Player, PlayerAction, ActionLogEntry } from './types'
+import type { GameState, Player, PlayerAction, ActionLogEntry, Pot } from './types'
 import { GamePhase } from './types'
-import { validateAction, getAvailableActions } from './ActionValidator'
+import { getAvailableActions } from './ActionValidator'
 import { calculatePots } from './PotCalculator'
 
 /**
@@ -73,6 +73,8 @@ export function processPlayerAction(
   let updatedPlayers = [...players]
   let updatedPots = [...pots]
   let updatedPlayer = { ...player }
+  let nextMinRaise = state.minRaise
+  let nextLastRaiseAmount = state.lastRaiseAmount
 
   switch (action.type) {
     case 'FOLD':
@@ -96,11 +98,18 @@ export function processPlayerAction(
     }
 
     case 'RAISE': {
-      const raiseAmount = action.amount ?? player.currentBet + state.minRaise
-      const increment = raiseAmount - player.currentBet
+      const maxBet = Math.max(...state.players.map(p => p.currentBet))
+      const requestedTotal = action.amount ?? maxBet + state.minRaise
+      const raiseAmount = Math.min(requestedTotal, player.currentBet + player.chips)
+      const increment = Math.max(0, raiseAmount - player.currentBet)
+      const raiseIncrement = raiseAmount - maxBet
       updatedPlayer.chips -= increment
       updatedPlayer.currentBet = raiseAmount
       updatedPlayer.totalBetThisHand += increment
+      if (raiseIncrement > 0) {
+        nextMinRaise = raiseIncrement
+        nextLastRaiseAmount = raiseIncrement
+      }
       if (updatedPlayer.chips === 0) {
         updatedPlayer.isAllIn = true
       }
@@ -134,6 +143,8 @@ export function processPlayerAction(
     players: updatedPlayers,
     pots: updatedPots,
     currentPlayerIndex: nextPlayerIndex,
+    minRaise: nextMinRaise,
+    lastRaiseAmount: nextLastRaiseAmount,
     lastAction: actionLog,
     actionHistory: [...state.actionHistory, actionLog],
   }
@@ -151,20 +162,7 @@ function getCallAmount(state: GameState, player: Player): number {
  * 从玩家状态计算底池
  */
 function calculatePotsFromPlayers(players: Player[]): Pot[] {
-  const activePlayers = players.filter(p => p.isActive && p.totalBetThisHand > 0)
-  
-  if (activePlayers.length === 0) {
-    return []
-  }
-
-  // 简化版：直接计算总底池
-  const totalAmount = activePlayers.reduce((sum, p) => sum + p.totalBetThisHand, 0)
-  
-  return [{
-    amount: totalAmount,
-    eligiblePlayerIds: activePlayers.filter(p => !p.isFolded).map(p => p.id),
-    isMainPot: true,
-  }]
+  return calculatePots(players).pots
 }
 
 /**
@@ -267,7 +265,7 @@ export function getCurrentAvailableActions(state: GameState): ReturnType<typeof 
     return []
   }
   
-  return getAvailableActions(state, currentPlayer.id)
+  return getAvailableActions(currentPlayer, state)
 }
 
 /**

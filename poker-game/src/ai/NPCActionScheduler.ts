@@ -1,5 +1,5 @@
 // ai/NPCActionScheduler.ts — NPC 行动调度器
-import type { GameState, Player } from '@/engine/types'
+import type { GameState, Player, PlayerAction } from '@/engine/types'
 import type { NPCAgentSkill } from './skills/schema'
 import { npcDecisionEngine } from './NPCDecisionEngine'
 import { balancedSkill } from './skills/balanced'
@@ -35,7 +35,7 @@ export class NPCActionScheduler {
   scheduleAction(
     player: Player,
     gameState: GameState,
-    onAction: (action: { type: string; amount?: number; playerId: string }) => void
+    onAction: (action: PlayerAction) => void
   ): void {
     if (this.isProcessing || !player.isNPC || player.isFolded || player.isAllIn) {
       return
@@ -49,7 +49,7 @@ export class NPCActionScheduler {
     this.timeoutId = setTimeout(async () => {
       try {
         // 获取 NPC 的 Skill
-        const skill = player.skillId ? SKILL_MAP[player.skillId] : balancedSkill
+        const skill = player.skillId ? SKILL_MAP[player.skillId] ?? balancedSkill : balancedSkill
 
         // 决策
         const result = await npcDecisionEngine.decide(player, gameState, skill)
@@ -62,6 +62,7 @@ export class NPCActionScheduler {
         onAction({
           type: 'FOLD',
           playerId: player.id,
+          timestamp: Date.now(),
         })
       } finally {
         this.isProcessing = false
