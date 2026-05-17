@@ -58,7 +58,7 @@ export function processPlayerAction(
   // 标记玩家已行动
   const tracker = trackers.get(action.playerId)
   if (tracker) {
-    tracker.hasActed = true
+    trackers.set(action.playerId, { ...tracker, hasActed: true })
   }
 
   // 创建行动日志
@@ -220,7 +220,7 @@ export function initActionTrackers(players: Player[]): Map<string, PlayerActionT
  */
 export function resetActionTrackers(trackers: Map<string, PlayerActionTracker>): void {
   for (const tracker of trackers.values()) {
-    tracker.hasActed = false
+    trackers.set(tracker.playerId, { ...tracker, hasActed: false })
   }
 }
 
