@@ -78,8 +78,25 @@ export class Deck {
 /**
  * 创建一个已洗牌的新牌组
  */
-export function createShuffledDeck(): Deck {
+export function createShuffledDeck(): Card[] {
   const deck = new Deck()
   deck.shuffle()
-  return deck
+  return deck.getCards()
+}
+
+/**
+ * 从不可变牌组数组顶部发牌，并返回剩余牌组。
+ */
+export function dealCards(
+  cards: Card[],
+  count: number
+): { card: Card[]; remainingDeck: Card[] } {
+  if (count < 0 || count > cards.length) {
+    throw new Error(`Invalid deal count: ${count}. Remaining cards: ${cards.length}`)
+  }
+
+  return {
+    card: cards.slice(0, count),
+    remainingDeck: cards.slice(count),
+  }
 }
