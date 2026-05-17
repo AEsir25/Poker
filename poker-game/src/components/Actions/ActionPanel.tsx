@@ -26,7 +26,7 @@ export function ActionPanel() {
     )
   }
 
-  const availableActions = getAvailableActions(gameState, currentPlayer.id)
+  const availableActions = getAvailableActions(currentPlayer, gameState)
 
   const handleAction = (type: ActionType, amount?: number) => {
     submitAction({

@@ -23,7 +23,7 @@ const MAX_THINK_TIME = 2000
  * 负责 NPC 行动的异步执行，模拟思考延迟
  */
 export class NPCActionScheduler {
-  private timeoutId: NodeJS.Timeout | null = null
+  private timeoutId: ReturnType<typeof setTimeout> | null = null
   private isProcessing: boolean = false
 
   /**
@@ -35,7 +35,7 @@ export class NPCActionScheduler {
   scheduleAction(
     player: Player,
     gameState: GameState,
-    onAction: (action: { type: string; amount?: number; playerId: string }) => void
+    onAction: (action: { type: string; amount?: number; playerId: string; timestamp: number }) => void
   ): void {
     if (this.isProcessing || !player.isNPC || player.isFolded || player.isAllIn) {
       return
@@ -62,6 +62,7 @@ export class NPCActionScheduler {
         onAction({
           type: 'FOLD',
           playerId: player.id,
+          timestamp: Date.now(),
         })
       } finally {
         this.isProcessing = false

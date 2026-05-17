@@ -1,7 +1,7 @@
 // engine/RoundController.ts — 轮次控制器
-import type { GameState, Player, PlayerAction, ActionLogEntry } from './types'
+import type { GameState, Player, PlayerAction, ActionLogEntry, Pot } from './types'
 import { GamePhase } from './types'
-import { validateAction, getAvailableActions } from './ActionValidator'
+import { getAvailableActions } from './ActionValidator'
 import { calculatePots } from './PotCalculator'
 
 /**
@@ -58,7 +58,7 @@ export function processPlayerAction(
   // 标记玩家已行动
   const tracker = trackers.get(action.playerId)
   if (tracker) {
-    tracker.hasActed = true
+    trackers.set(action.playerId, { ...tracker, hasActed: true })
   }
 
   // 创建行动日志
@@ -70,9 +70,9 @@ export function processPlayerAction(
     potAfter: pots.reduce((sum, p) => sum + p.amount, 0),
   }
 
-  let updatedPlayers = [...players]
+  const updatedPlayers = [...players]
   let updatedPots = [...pots]
-  let updatedPlayer = { ...player }
+  const updatedPlayer = { ...player }
 
   switch (action.type) {
     case 'FOLD':
@@ -151,20 +151,7 @@ function getCallAmount(state: GameState, player: Player): number {
  * 从玩家状态计算底池
  */
 function calculatePotsFromPlayers(players: Player[]): Pot[] {
-  const activePlayers = players.filter(p => p.isActive && p.totalBetThisHand > 0)
-  
-  if (activePlayers.length === 0) {
-    return []
-  }
-
-  // 简化版：直接计算总底池
-  const totalAmount = activePlayers.reduce((sum, p) => sum + p.totalBetThisHand, 0)
-  
-  return [{
-    amount: totalAmount,
-    eligiblePlayerIds: activePlayers.filter(p => !p.isFolded).map(p => p.id),
-    isMainPot: true,
-  }]
+  return calculatePots(players).pots
 }
 
 /**
@@ -233,7 +220,7 @@ export function initActionTrackers(players: Player[]): Map<string, PlayerActionT
  */
 export function resetActionTrackers(trackers: Map<string, PlayerActionTracker>): void {
   for (const tracker of trackers.values()) {
-    tracker.hasActed = false
+    trackers.set(tracker.playerId, { ...tracker, hasActed: false })
   }
 }
 
@@ -267,7 +254,7 @@ export function getCurrentAvailableActions(state: GameState): ReturnType<typeof 
     return []
   }
   
-  return getAvailableActions(state, currentPlayer.id)
+  return getAvailableActions(currentPlayer, state)
 }
 
 /**
