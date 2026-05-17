@@ -149,11 +149,14 @@ export const useGameStore = create<GameStore>()(
         return
       }
 
+      const nextActionTrackers = new Map(actionTrackers)
+
       // 处理行动
-      const newState = processPlayerAction(gameState, action, actionTrackers)
+      const newState = processPlayerAction(gameState, action, nextActionTrackers)
 
       set((state) => {
         state.gameState = newState
+        state.actionTrackers = nextActionTrackers
         state.error = null
       })
 
@@ -165,7 +168,7 @@ export const useGameStore = create<GameStore>()(
       }
 
       // 检查轮次是否结束
-      if (isRoundComplete(newState, actionTrackers)) {
+      if (isRoundComplete(newState, nextActionTrackers)) {
         // 检查是否所有人都 All-in 或弃牌
         if (isAllPlayersAllInOrFolded(newState)) {
           // 直接进入摊牌
@@ -191,10 +194,12 @@ export const useGameStore = create<GameStore>()(
       if (!gameState) return
 
       const newState = advancePhase(gameState)
-      resetActionTrackers(actionTrackers)
+      const nextActionTrackers = new Map(actionTrackers)
+      resetActionTrackers(nextActionTrackers)
 
       set((state) => {
         state.gameState = newState
+        state.actionTrackers = nextActionTrackers
       })
     },
 
