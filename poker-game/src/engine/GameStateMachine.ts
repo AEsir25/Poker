@@ -21,16 +21,14 @@ import { evaluateHand } from './HandEvaluator'
  */
 export function startNewRound(state: GameState): GameState {
   let deck = createShuffledDeck()
-  const players = [...state.players]
-
-  // 重置玩家状态
-  for (const player of players) {
-    player.holeCards = []
-    player.currentBet = 0
-    player.totalBetThisHand = 0
-    player.isFolded = false
-    player.isAllIn = false
-  }
+  const players = state.players.map(player => ({
+    ...player,
+    holeCards: [],
+    currentBet: 0,
+    totalBetThisHand: 0,
+    isFolded: false,
+    isAllIn: false,
+  }))
 
   // 发手牌（每人2张）
   for (let i = 0; i < 2; i++) {
