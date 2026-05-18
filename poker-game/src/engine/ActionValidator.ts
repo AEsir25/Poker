@@ -15,7 +15,7 @@ export interface ActionValidationResult {
  */
 export function getCurrentBetToCall(gameState: GameState): number {
   const activePlayers = gameState.players.filter(
-    (p) => p.isActive && !p.isFolded && !p.isAllIn
+    (p) => p.isActive && !p.isFolded
   )
 
   if (activePlayers.length === 0) return 0
@@ -77,7 +77,7 @@ export function hasBigBlindOption(gameState: GameState): boolean {
  * Fold 任何时候都允许
  */
 export function validateFold(
-  action: PlayerAction,
+  _action: PlayerAction,
   player: Player,
   _gameState: GameState
 ): ActionValidationResult {
@@ -110,7 +110,7 @@ export function validateFold(
  * 条件：当前街无未匹配注；或 Pre-flop 大盲位且无人加注（Option）
  */
 export function validateCheck(
-  action: PlayerAction,
+  _action: PlayerAction,
   player: Player,
   gameState: GameState
 ): ActionValidationResult {
@@ -142,7 +142,7 @@ export function validateCheck(
  * 条件：存在未匹配注；筹码不足时自动转为 All-in
  */
 export function validateCall(
-  action: PlayerAction,
+  _action: PlayerAction,
   player: Player,
   gameState: GameState
 ): ActionValidationResult {
@@ -193,7 +193,15 @@ export function validateRaise(
     }
   }
 
-  const totalBetAfterRaise = player.currentBet + action.amount
+  const totalBetAfterRaise = action.amount
+  const increment = totalBetAfterRaise - player.currentBet
+
+  if (increment <= 0) {
+    return {
+      isValid: false,
+      errorMessage: '加注金额必须高于当前下注',
+    }
+  }
 
   // 加注后总额必须 ≥ 当前最高注 + 最小加注增量
   if (totalBetAfterRaise < maxBet + minRaise) {
@@ -204,7 +212,7 @@ export function validateRaise(
   }
 
   // 检查筹码是否足够
-  if (player.chips < action.amount) {
+  if (player.chips < increment) {
     return {
       isValid: false,
       errorMessage: '筹码不足',
@@ -233,7 +241,7 @@ export function validateRaise(
  * 条件：任何时候都可以全押
  */
 export function validateAllIn(
-  action: PlayerAction,
+  _action: PlayerAction,
   player: Player,
   _gameState: GameState
 ): ActionValidationResult {
@@ -308,7 +316,7 @@ export function getAvailableActions(
   }
 
   // Raise
-  if (validateRaise({ type: 'RAISE', playerId: player.id, timestamp: Date.now(), amount: gameState.minRaise + getCurrentBetToCall(gameState) }, player, gameState, options).isValid) {
+  if (validateRaise({ type: 'RAISE', playerId: player.id, timestamp: Date.now(), amount: getCurrentBetToCall(gameState) + gameState.minRaise }, player, gameState, options).isValid) {
     availableActions.push('RAISE')
   }
 

@@ -177,16 +177,17 @@ describe('Multiple Players All-in (多人 All-in)', () => {
 
 // ==================== 弃牌玩家测试 ====================
 describe('Folded Players (弃牌玩家)', () => {
-  it('弃牌玩家不应计入底池', () => {
+  it('弃牌玩家已投入的筹码仍应计入底池，但不能赢取底池', () => {
     const players: Player[] = [
       createPlayer('A', 100, true, false), // 活跃
-      createPlayer('B', 100, true, true),  // 弃牌 - 不应计入
+      createPlayer('B', 100, true, true),  // 弃牌 - 筹码留在底池
       createPlayer('C', 100, true, false), // 活跃
     ]
 
     const result = calculatePots(players)
 
-    expect(result.totalPot).toBe(200) // 只有 A 和 C 的 100
+    expect(result.totalPot).toBe(300)
+    expect(result.pots[0].amount).toBe(300)
     expect(result.pots[0].eligiblePlayerIds).toEqual(['A', 'C'])
   })
 
