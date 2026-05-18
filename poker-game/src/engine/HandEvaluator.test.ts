@@ -452,7 +452,7 @@ describe('Edge Cases (边界情况)', () => {
       card(Suit.Hearts, Rank.Queen),
     ]
 
-    expect(() => evaluateHand(fourCards as any)).toThrow('between 5 and 7 cards')
+    expect(() => evaluateHand(fourCards)).toThrow('between 5 and 7 cards')
   })
 
   it('compareHands 应处理空数组', () => {
