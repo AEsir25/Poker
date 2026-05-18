@@ -62,6 +62,9 @@ export interface PlayerAction {
   timestamp: number
 }
 
+export type ActionType = PlayerAction['type']
+export type PlayerActionType = PlayerAction['type']
+
 export interface ActionLogEntry {
   playerId: string
   playerName: string
