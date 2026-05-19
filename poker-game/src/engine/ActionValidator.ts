@@ -78,8 +78,12 @@ export function hasBigBlindOption(gameState: GameState): boolean {
  */
 export function validateFold(
   action: PlayerAction,
-  player: Player
+  player: Player,
+  gameState: GameState
 ): ActionValidationResult {
+  void action
+  void gameState
+
   if (!player.isActive) {
     return {
       isValid: false,
@@ -241,8 +245,12 @@ export function validateRaise(
  */
 export function validateAllIn(
   action: PlayerAction,
-  player: Player
+  player: Player,
+  gameState: GameState
 ): ActionValidationResult {
+  void action
+  void gameState
+
   if (!player.isActive || player.isFolded) {
     return {
       isValid: false,
