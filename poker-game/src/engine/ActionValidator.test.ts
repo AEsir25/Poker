@@ -1,7 +1,7 @@
 // engine/ActionValidator.test.ts — 行动验证测试
 import { describe, it, expect } from 'vitest'
-import type { GameState, Player } from '@/engine/types'
-import { GamePhase, Rank, Suit } from '@/engine/types'
+import type { GameState, Player, PlayerAction } from '@/engine/types'
+import { GamePhase } from '@/engine/types'
 import {
   validateFold,
   validateCheck,
@@ -11,7 +11,6 @@ import {
   validateAction,
   getAvailableActions,
   getCurrentBetToCall,
-  hasBigBlindOption,
 } from '@/engine/ActionValidator'
 
 /**
@@ -257,7 +256,7 @@ describe('Raise (加注)', () => {
 
     // 只加注到 70，但最低需要到 120
     const result = validateRaise(
-      { type: 'RAISE', playerId: player.id, timestamp: Date.now(), amount: 20 },
+      { type: 'RAISE', playerId: player.id, timestamp: Date.now(), amount: 110 },
       player,
       gameState
     )
@@ -387,7 +386,7 @@ describe('validateAction (统一验证)', () => {
     const gameState = createGameState()
 
     const result = validateAction(
-      { type: 'UNKNOWN' as any, playerId: player.id, timestamp: Date.now() },
+      { type: 'UNKNOWN', playerId: player.id, timestamp: Date.now() } as unknown as PlayerAction,
       player,
       gameState
     )

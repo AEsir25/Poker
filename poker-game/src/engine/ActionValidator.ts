@@ -78,8 +78,7 @@ export function hasBigBlindOption(gameState: GameState): boolean {
  */
 export function validateFold(
   action: PlayerAction,
-  player: Player,
-  _gameState: GameState
+  player: Player
 ): ActionValidationResult {
   if (!player.isActive) {
     return {
@@ -242,8 +241,7 @@ export function validateRaise(
  */
 export function validateAllIn(
   action: PlayerAction,
-  player: Player,
-  _gameState: GameState
+  player: Player
 ): ActionValidationResult {
   if (!player.isActive || player.isFolded) {
     return {
