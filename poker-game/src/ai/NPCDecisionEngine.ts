@@ -2,7 +2,7 @@
 import type { Player, GameState, PlayerAction, PlayerActionType } from '@/engine/types'
 import type { NPCAgentSkill } from './skills/schema'
 import { getHandStrength, calculatePotOdds } from './HandStrength'
-import { getAvailableActions, validateAction } from '@/engine/ActionValidator'
+import { getAvailableActions } from '@/engine/ActionValidator'
 
 interface DecisionResult {
   action: PlayerAction
@@ -27,7 +27,7 @@ export class RuleBasedDecisionEngine implements INPCDecisionEngine {
     skill: NPCAgentSkill
   ): Promise<DecisionResult> {
     const thoughtLog: string[] = []
-    const { phase, communityCards, pots, smallBlind, bigBlind, minRaise } = gameState
+    const { phase, communityCards, pots } = gameState
 
     // 1. 计算牌力
     const handStrength = getHandStrength(player.holeCards, communityCards, phase)
@@ -41,7 +41,7 @@ export class RuleBasedDecisionEngine implements INPCDecisionEngine {
     thoughtLog.push(`底池赔率: ${(potOdds * 100).toFixed(0)}%`)
 
     // 3. 获取可用行动
-    const availableActions = getAvailableActions(gameState, player.id)
+    const availableActions = getAvailableActions(player, gameState)
     thoughtLog.push(`可用行动: ${availableActions.join(', ')}`)
 
     // 4. 位置加成（越靠后位置加成越高）

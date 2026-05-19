@@ -237,9 +237,9 @@ describe('Raise (加注)', () => {
       minRaise: 20,
     })
 
-    // 最低需要加注到 100 + 20 = 120，即额外下注 70
+    // 最低需要加注到 100 + 20 = 120
     const result = validateRaise(
-      { type: 'RAISE', playerId: player.id, timestamp: Date.now(), amount: 70 },
+      { type: 'RAISE', playerId: player.id, timestamp: Date.now(), amount: 120 },
       player,
       gameState
     )
@@ -255,7 +255,7 @@ describe('Raise (加注)', () => {
       minRaise: 20,
     })
 
-    // 只加注 20（到 70），但最低需要到 120
+    // 只加注到 70，但最低需要到 120
     const result = validateRaise(
       { type: 'RAISE', playerId: player.id, timestamp: Date.now(), amount: 20 },
       player,
@@ -275,7 +275,7 @@ describe('Raise (加注)', () => {
     })
 
     const result = validateRaise(
-      { type: 'RAISE', playerId: player.id, timestamp: Date.now(), amount: 100 },
+      { type: 'RAISE', playerId: player.id, timestamp: Date.now(), amount: 120 },
       player,
       gameState
     )
@@ -302,7 +302,7 @@ describe('Raise (加注)', () => {
     })
 
     const result = validateRaise(
-      { type: 'RAISE', playerId: player.id, timestamp: Date.now(), amount: 70 },
+      { type: 'RAISE', playerId: player.id, timestamp: Date.now(), amount: 120 },
       player,
       gameState,
       { maxRaisesPerRound: 1 } // 只允许 1 次加注
@@ -428,6 +428,16 @@ describe('Helper Functions (辅助函数)', () => {
     const gameState = createGameState({ players })
 
     expect(getCurrentBetToCall(gameState)).toBe(150)
+  })
+
+  it('getCurrentBetToCall 应包含 All-in 玩家下注，避免其他玩家免费过牌', () => {
+    const players = [
+      createPlayer({ id: 'p1', currentBet: 500, isAllIn: true }),
+      createPlayer({ id: 'p2', currentBet: 100 }),
+    ]
+    const gameState = createGameState({ players })
+
+    expect(getCurrentBetToCall(gameState)).toBe(500)
   })
 })
 
