@@ -15,7 +15,7 @@ export interface ActionValidationResult {
  */
 export function getCurrentBetToCall(gameState: GameState): number {
   const activePlayers = gameState.players.filter(
-    (p) => p.isActive && !p.isFolded && !p.isAllIn
+    (p) => p.isActive && !p.isFolded
   )
 
   if (activePlayers.length === 0) return 0
@@ -193,7 +193,8 @@ export function validateRaise(
     }
   }
 
-  const totalBetAfterRaise = player.currentBet + action.amount
+  const totalBetAfterRaise = action.amount
+  const increment = totalBetAfterRaise - player.currentBet
 
   // 加注后总额必须 ≥ 当前最高注 + 最小加注增量
   if (totalBetAfterRaise < maxBet + minRaise) {
@@ -204,7 +205,7 @@ export function validateRaise(
   }
 
   // 检查筹码是否足够
-  if (player.chips < action.amount) {
+  if (increment <= 0 || player.chips < increment) {
     return {
       isValid: false,
       errorMessage: '筹码不足',

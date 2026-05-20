@@ -275,14 +275,14 @@ function calculateScore(rank: HandRank, kickers: number[]): number {
 }
 
 /**
- * 评估一手 7 张牌的最佳 5 张组合
+ * 评估 5-7 张牌中的最佳 5 张组合
  */
-export function evaluateHand(sevenCards: Card[]): HandEvaluation {
-  if (sevenCards.length !== 7) {
-    throw new Error(`evaluateHand requires exactly 7 cards, got ${sevenCards.length}`)
+export function evaluateBestHand(cards: Card[]): HandEvaluation {
+  if (cards.length < 5 || cards.length > 7) {
+    throw new Error(`evaluateBestHand requires 5 to 7 cards, got ${cards.length}`)
   }
 
-  const combinations = generateCombinations(sevenCards, 5)
+  const combinations = generateCombinations(cards, 5)
   let bestHand: HandEvaluation | null = null
 
   for (const combo of combinations) {
@@ -293,6 +293,17 @@ export function evaluateHand(sevenCards: Card[]): HandEvaluation {
   }
 
   return bestHand!
+}
+
+/**
+ * 评估一手 7 张牌的最佳 5 张组合
+ */
+export function evaluateHand(sevenCards: Card[]): HandEvaluation {
+  if (sevenCards.length !== 7) {
+    throw new Error(`evaluateHand requires exactly 7 cards, got ${sevenCards.length}`)
+  }
+
+  return evaluateBestHand(sevenCards)
 }
 
 /**

@@ -1,7 +1,7 @@
 // engine/HandEvaluator.test.ts — 手牌评估测试
 import { describe, it, expect } from 'vitest'
 import { Suit, Rank, type Card } from '@/engine/types'
-import { evaluateHand, HandRank, compareHands, getHandDescription } from '@/engine/HandEvaluator'
+import { evaluateBestHand, evaluateHand, HandRank, compareHands, getHandDescription } from '@/engine/HandEvaluator'
 
 /**
  * 测试辅助函数：创建一张牌
@@ -41,6 +41,22 @@ describe('Royal Flush (皇家同花顺)', () => {
 
     const result = evaluateHand(hand)
     expect(result.rank).toBe(HandRank.ROYAL_FLUSH)
+  })
+})
+
+describe('evaluateBestHand (5-7 张牌评估)', () => {
+  it('支持翻牌阶段 5 张牌评估', () => {
+    const cards = [
+      card(Suit.Hearts, Rank.Ace),
+      card(Suit.Diamonds, Rank.Ace),
+      card(Suit.Clubs, Rank.Two),
+      card(Suit.Spades, Rank.Seven),
+      card(Suit.Hearts, Rank.Nine),
+    ]
+
+    const result = evaluateBestHand(cards)
+
+    expect(result.rank).toBe(HandRank.ONE_PAIR)
   })
 })
 
