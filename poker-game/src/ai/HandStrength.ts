@@ -1,5 +1,5 @@
 // ai/HandStrength.ts — 牌力评估
-import type { Card as CardType, GameState } from '@/engine/types'
+import type { Card as CardType } from '@/engine/types'
 import { Suit, Rank, GamePhase } from '@/engine/types'
 import { evaluateBestHand } from '@/engine/HandEvaluator'
 

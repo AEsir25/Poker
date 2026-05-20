@@ -283,7 +283,7 @@ describe('Edge Cases (边界情况)', () => {
   it('没有活跃玩家应返回空底池', () => {
     const players: Player[] = [
       createPlayer('A', 100, false, false), // 非活跃
-      createPlayer('B', 100, true, true),   // 弃牌
+      createPlayer('B', 100, false, true),  // 非活跃且弃牌
     ]
 
     const result = calculatePots(players)

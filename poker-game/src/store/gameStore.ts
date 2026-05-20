@@ -2,7 +2,7 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import { v4 as uuidv4 } from 'uuid'
-import type { GameState, GameSettings, Player, PlayerAction, Pot } from '@/engine/types'
+import type { GameState, GameSettings, Player, PlayerAction } from '@/engine/types'
 import { GamePhase } from '@/engine/types'
 import {
   startNewRound,

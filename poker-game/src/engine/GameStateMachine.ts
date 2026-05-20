@@ -102,7 +102,7 @@ export function startNewRound(state: GameState): GameState {
  * 推进阶段：PRE_FLOP → FLOP → TURN → RIVER → SHOWDOWN
  */
 export function advancePhase(state: GameState): GameState {
-  const { phase, deck, players, pots } = state
+  const { phase, deck } = state
 
   switch (phase) {
     case GamePhase.PRE_FLOP: {
