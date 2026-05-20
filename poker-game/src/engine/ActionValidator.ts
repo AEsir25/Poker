@@ -117,6 +117,8 @@ export function validateCheck(
   player: Player,
   gameState: GameState
 ): ActionValidationResult {
+  void action
+
   if (!player.isActive || player.isFolded || player.isAllIn) {
     return {
       isValid: false,
@@ -149,6 +151,8 @@ export function validateCall(
   player: Player,
   gameState: GameState
 ): ActionValidationResult {
+  void action
+
   if (!player.isActive || player.isFolded) {
     return {
       isValid: false,

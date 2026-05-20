@@ -1,5 +1,5 @@
 // engine/GameStateMachine.ts — 游戏阶段状态机
-import type { GameState, Pot } from './types'
+import type { GameState, Player, Pot } from './types'
 import { GamePhase } from './types'
 import { createShuffledDeck, dealCards } from './Deck'
 import { allocatePots } from './PotCalculator'
@@ -23,7 +23,7 @@ export function startNewRound(state: GameState): GameState {
   let deck = createShuffledDeck()
 
   // 重置玩家状态
-  const players = state.players.map((player) => ({
+  const players: Player[] = state.players.map((player) => ({
     ...player,
     holeCards: [],
     currentBet: 0,

@@ -45,7 +45,7 @@ export class RuleBasedDecisionEngine implements INPCDecisionEngine {
     thoughtLog.push(`可用行动: ${availableActions.join(', ')}`)
 
     // 4. 位置加成（越靠后位置加成越高）
-    const positionBonus = this.calculatePositionBonus(player, gameState) * skill.params.positionAwareness
+    const positionBonus = this.calculatePositionBonus(gameState) * skill.params.positionAwareness
     const adjustedStrength = Math.min(1, handStrength + positionBonus)
     thoughtLog.push(`位置加成后牌力: ${(adjustedStrength * 100).toFixed(0)}%`)
 
@@ -99,7 +99,7 @@ export class RuleBasedDecisionEngine implements INPCDecisionEngine {
    * 计算位置加成
    * 位置越靠后（行动顺序越晚），加成越高
    */
-  private calculatePositionBonus(player: Player, gameState: GameState): number {
+  private calculatePositionBonus(gameState: GameState): number {
     const { players, currentPlayerIndex } = gameState
     const activePlayers = players.filter(p => p.isActive && !p.isFolded && !p.isAllIn).length
     
