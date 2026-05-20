@@ -1,6 +1,6 @@
 // components/Common/ResultModal.tsx — 结算结果弹窗
 import { Modal } from './Modal'
-import { useGameState, useGameActions } from '@/store/gameStore'
+import { useGameState } from '@/store/gameStore'
 import { useUiStore } from '@/store/uiStore'
 
 interface ResultModalProps {

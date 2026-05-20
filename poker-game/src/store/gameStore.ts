@@ -2,7 +2,7 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import { v4 as uuidv4 } from 'uuid'
-import type { GameState, GameSettings, Player, PlayerAction, Pot } from '@/engine/types'
+import type { GameState, GameSettings, Player, PlayerAction } from '@/engine/types'
 import { GamePhase } from '@/engine/types'
 import {
   startNewRound,
@@ -94,6 +94,17 @@ function createInitialGameState(settings: GameSettings): GameState {
   }
 }
 
+function cloneActionTrackers(
+  trackers: Map<string, { playerId: string; hasActed: boolean }>
+): Map<string, { playerId: string; hasActed: boolean }> {
+  return new Map(
+    Array.from(trackers.entries()).map(([playerId, tracker]) => [
+      playerId,
+      { ...tracker },
+    ])
+  )
+}
+
 export const useGameStore = create<GameStore>()(
   immer((set, get) => ({
     // 初始状态
@@ -115,7 +126,7 @@ export const useGameStore = create<GameStore>()(
 
     // 开始新一手牌
     startRound: () => {
-      const { gameState, actionTrackers } = get()
+      const { gameState } = get()
       if (!gameState) return
 
       const newState = startNewRound(gameState)
@@ -141,19 +152,21 @@ export const useGameStore = create<GameStore>()(
         return
       }
 
-      const validation = validateAction(gameState, action.playerId, action)
-      if (!validation.valid) {
+      const validation = validateAction(action, currentPlayer, gameState)
+      if (!validation.isValid) {
         set((state) => {
-          state.error = validation.reason || '行动无效'
+          state.error = validation.errorMessage || '行动无效'
         })
         return
       }
 
       // 处理行动
-      const newState = processPlayerAction(gameState, action, actionTrackers)
+      const nextActionTrackers = cloneActionTrackers(actionTrackers)
+      const newState = processPlayerAction(gameState, action, nextActionTrackers)
 
       set((state) => {
         state.gameState = newState
+        state.actionTrackers = nextActionTrackers
         state.error = null
       })
 
@@ -165,7 +178,7 @@ export const useGameStore = create<GameStore>()(
       }
 
       // 检查轮次是否结束
-      if (isRoundComplete(newState, actionTrackers)) {
+      if (isRoundComplete(newState, nextActionTrackers)) {
         // 检查是否所有人都 All-in 或弃牌
         if (isAllPlayersAllInOrFolded(newState)) {
           // 直接进入摊牌
@@ -188,10 +201,12 @@ export const useGameStore = create<GameStore>()(
       if (!gameState) return
 
       const newState = advancePhase(gameState)
-      resetActionTrackers(actionTrackers)
+      const nextActionTrackers = cloneActionTrackers(actionTrackers)
+      resetActionTrackers(nextActionTrackers)
 
       set((state) => {
         state.gameState = newState
+        state.actionTrackers = nextActionTrackers
       })
     },
 

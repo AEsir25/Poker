@@ -3,6 +3,7 @@ interface RaiseSliderProps {
   minRaise: number
   maxChips: number
   currentBet: number
+  currentMaxBet: number
   value: number
   onChange: (value: number) => void
 }
@@ -11,10 +12,11 @@ export function RaiseSlider({
   minRaise,
   maxChips,
   currentBet,
+  currentMaxBet,
   value,
   onChange,
 }: RaiseSliderProps) {
-  const minRaiseTotal = currentBet + minRaise
+  const minRaiseTotal = currentMaxBet + minRaise
   const maxRaiseTotal = currentBet + maxChips
 
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {

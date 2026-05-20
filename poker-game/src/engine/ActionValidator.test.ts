@@ -1,7 +1,7 @@
 // engine/ActionValidator.test.ts — 行动验证测试
 import { describe, it, expect } from 'vitest'
 import type { GameState, Player } from '@/engine/types'
-import { GamePhase, Rank, Suit } from '@/engine/types'
+import { GamePhase } from '@/engine/types'
 import {
   validateFold,
   validateCheck,
@@ -11,7 +11,6 @@ import {
   validateAction,
   getAvailableActions,
   getCurrentBetToCall,
-  hasBigBlindOption,
 } from '@/engine/ActionValidator'
 
 /**
@@ -237,9 +236,9 @@ describe('Raise (加注)', () => {
       minRaise: 20,
     })
 
-    // 最低需要加注到 100 + 20 = 120，即额外下注 70
+    // amount 表示加注后的总下注额，最低需要加注到 100 + 20 = 120
     const result = validateRaise(
-      { type: 'RAISE', playerId: player.id, timestamp: Date.now(), amount: 70 },
+      { type: 'RAISE', playerId: player.id, timestamp: Date.now(), amount: 120 },
       player,
       gameState
     )
@@ -255,9 +254,27 @@ describe('Raise (加注)', () => {
       minRaise: 20,
     })
 
-    // 只加注 20（到 70），但最低需要到 120
+    // 只加注到 70，但最低需要到 120
     const result = validateRaise(
-      { type: 'RAISE', playerId: player.id, timestamp: Date.now(), amount: 20 },
+      { type: 'RAISE', playerId: player.id, timestamp: Date.now(), amount: 70 },
+      player,
+      gameState
+    )
+
+    expect(result.isValid).toBe(false)
+    expect(result.errorMessage).toContain('加注金额不足')
+  })
+
+  it('不应把 amount 当作增量而放行低于最小加注的总额', () => {
+    const player = createPlayer({ currentBet: 95, chips: 1000 })
+    const otherPlayer = createPlayer({ id: 'player2', currentBet: 100 })
+    const gameState = createGameState({
+      players: [player, otherPlayer],
+      minRaise: 20,
+    })
+
+    const result = validateRaise(
+      { type: 'RAISE', playerId: player.id, timestamp: Date.now(), amount: 110 },
       player,
       gameState
     )
@@ -275,7 +292,7 @@ describe('Raise (加注)', () => {
     })
 
     const result = validateRaise(
-      { type: 'RAISE', playerId: player.id, timestamp: Date.now(), amount: 100 },
+      { type: 'RAISE', playerId: player.id, timestamp: Date.now(), amount: 120 },
       player,
       gameState
     )
@@ -302,7 +319,7 @@ describe('Raise (加注)', () => {
     })
 
     const result = validateRaise(
-      { type: 'RAISE', playerId: player.id, timestamp: Date.now(), amount: 70 },
+      { type: 'RAISE', playerId: player.id, timestamp: Date.now(), amount: 120 },
       player,
       gameState,
       { maxRaisesPerRound: 1 } // 只允许 1 次加注
@@ -387,7 +404,7 @@ describe('validateAction (统一验证)', () => {
     const gameState = createGameState()
 
     const result = validateAction(
-      { type: 'UNKNOWN' as any, playerId: player.id, timestamp: Date.now() },
+      { type: 'UNKNOWN' as never, playerId: player.id, timestamp: Date.now() },
       player,
       gameState
     )
@@ -410,10 +427,10 @@ describe('Helper Functions (辅助函数)', () => {
     expect(getCurrentBetToCall(gameState)).toBe(100)
   })
 
-  it('getCurrentBetToCall 应跳过 All-in 玩家', () => {
+  it('getCurrentBetToCall 应包含 All-in 玩家', () => {
     const players = [
-      createPlayer({ id: 'p1', currentBet: 100, isAllIn: true }),
-      createPlayer({ id: 'p2', currentBet: 150 }),
+      createPlayer({ id: 'p1', currentBet: 150, isAllIn: true }),
+      createPlayer({ id: 'p2', currentBet: 100 }),
     ]
     const gameState = createGameState({ players })
 
