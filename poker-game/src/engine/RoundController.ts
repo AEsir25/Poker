@@ -61,9 +61,9 @@ export function processPlayerAction(
     tracker.hasActed = true
   }
 
-  let updatedPlayers = [...players]
+  const updatedPlayers = [...players]
   let updatedPots = state.pots
-  let updatedPlayer = { ...player }
+  const updatedPlayer = { ...player }
   let nextMinRaise = state.minRaise
   let nextLastRaiseAmount = state.lastRaiseAmount
 
