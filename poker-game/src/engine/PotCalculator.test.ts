@@ -177,16 +177,17 @@ describe('Multiple Players All-in (多人 All-in)', () => {
 
 // ==================== 弃牌玩家测试 ====================
 describe('Folded Players (弃牌玩家)', () => {
-  it('弃牌玩家不应计入底池', () => {
+  it('弃牌玩家的已投入筹码应计入底池但不能赢池', () => {
     const players: Player[] = [
       createPlayer('A', 100, true, false), // 活跃
-      createPlayer('B', 100, true, true),  // 弃牌 - 不应计入
+      createPlayer('B', 100, true, true),  // 弃牌 - 筹码留在底池，但没有赢池资格
       createPlayer('C', 100, true, false), // 活跃
     ]
 
     const result = calculatePots(players)
 
-    expect(result.totalPot).toBe(200) // 只有 A 和 C 的 100
+    expect(result.totalPot).toBe(300)
+    expect(result.pots[0].amount).toBe(300)
     expect(result.pots[0].eligiblePlayerIds).toEqual(['A', 'C'])
   })
 
@@ -235,16 +236,30 @@ describe('Pot Allocation (底池分配)', () => {
 
   it('应正确处理奇数筹码', () => {
     const pots = [
-      { amount: 150, eligiblePlayerIds: ['A', 'B', 'C'], isMainPot: true },
+      { amount: 151, eligiblePlayerIds: ['A', 'B', 'C'], isMainPot: true },
     ]
 
-    const winnersByPot = [['A', 'B']] // 两人平分 150
+    const winnersByPot = [['A', 'B']] // 两人平分 151，余数给顺序最靠前的赢家
 
     const allocations = allocatePots(pots, winnersByPot)
 
-    // 150 / 2 = 75每人
-    expect(allocations.get('A')).toBe(75)
+    // 151 / 2 = 75每人，余 1 给 A
+    expect(allocations.get('A')).toBe(76)
     expect(allocations.get('B')).toBe(75)
+  })
+
+  it('奇数筹码不应分配给未赢得该池的玩家', () => {
+    const pots = [
+      { amount: 101, eligiblePlayerIds: ['A', 'B', 'C'], isMainPot: true },
+    ]
+
+    const winnersByPot = [['B', 'C']]
+
+    const allocations = allocatePots(pots, winnersByPot)
+
+    expect(allocations.get('A')).toBeUndefined()
+    expect(allocations.get('B')).toBe(51)
+    expect(allocations.get('C')).toBe(50)
   })
 
   it('奇数筹码应分配给第一个有资格的玩家', () => {
