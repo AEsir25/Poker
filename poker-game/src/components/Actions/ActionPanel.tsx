@@ -26,7 +26,7 @@ export function ActionPanel() {
     )
   }
 
-  const availableActions = getAvailableActions(gameState, currentPlayer.id)
+  const availableActions = getAvailableActions(currentPlayer, gameState)
 
   const handleAction = (type: ActionType, amount?: number) => {
     submitAction({
@@ -40,7 +40,7 @@ export function ActionPanel() {
 
   const handleRaise = () => {
     setShowRaiseSlider(true)
-    setRaiseAmount(currentPlayer.currentBet + gameState.minRaise)
+    setRaiseAmount(currentBetToCall + gameState.minRaise)
   }
 
   const confirmRaise = () => {
@@ -52,10 +52,13 @@ export function ActionPanel() {
   const canCall = availableActions.includes('CALL')
   const canRaise = availableActions.includes('RAISE')
   const canAllIn = availableActions.includes('ALL_IN')
+  const currentBetToCall = Math.max(
+    ...gameState.players.filter(p => p.isActive && !p.isFolded).map(p => p.currentBet)
+  )
 
   // 计算跟注金额
   const callAmount = Math.min(
-    Math.max(...gameState.players.map(p => p.currentBet)) - currentPlayer.currentBet,
+    currentBetToCall - currentPlayer.currentBet,
     currentPlayer.chips
   )
 
@@ -65,8 +68,8 @@ export function ActionPanel() {
         <div className="space-y-4">
           <RaiseSlider
             minRaise={gameState.minRaise}
-            maxChips={currentPlayer.chips}
-            currentBet={currentPlayer.currentBet}
+            maxChips={currentPlayer.chips - Math.max(0, currentBetToCall - currentPlayer.currentBet)}
+            currentBet={currentBetToCall}
             value={raiseAmount}
             onChange={setRaiseAmount}
           />

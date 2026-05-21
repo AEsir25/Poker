@@ -1,7 +1,7 @@
 // ai/HandStrength.ts — 牌力评估
-import type { Card as CardType, GameState } from '@/engine/types'
+import type { Card as CardType } from '@/engine/types'
 import { Suit, Rank, GamePhase } from '@/engine/types'
-import { evaluateHand, HandRank } from '@/engine/HandEvaluator'
+import { evaluateHand } from '@/engine/HandEvaluator'
 
 /**
  * 计算 Pre-flop 牌力（Chen Formula 简化版）
@@ -92,17 +92,39 @@ export function calculatePostFlopStrength(
   if (holeCards.length !== 2 || communityCards.length === 0) return 0
 
   const allCards = [...holeCards, ...communityCards]
-  const handResult = evaluateHand(allCards)
-  const handRank = handResult.rank
+  let score = estimateMadeHandStrength(allCards)
 
-  // 基础分：牌型等级 1-10，归一化
-  let score = handRank / 10
+  if (allCards.length === 7) {
+    const handResult = evaluateHand(allCards)
+    // 基础分：牌型等级 1-10，归一化
+    score = handResult.rank / 10
+  }
 
   // 听牌潜力加成
   const drawPotential = calculateDrawPotential(allCards)
   score += drawPotential * 0.2 // 最多加 0.2
 
   return Math.max(0, Math.min(1, score))
+}
+
+function estimateMadeHandStrength(cards: CardType[]): number {
+  const rankCounts = new Map<Rank, number>()
+  for (const card of cards) {
+    rankCounts.set(card.rank, (rankCounts.get(card.rank) ?? 0) + 1)
+  }
+
+  const counts = [...rankCounts.values()]
+  const pairCount = counts.filter(count => count === 2).length
+
+  if (counts.includes(4)) return 0.8
+  if (counts.includes(3) && pairCount > 0) return 0.7
+  if (isFlushDraw(cards) && cards.length >= 5) return 0.6
+  if (isMadeStraight(cards)) return 0.5
+  if (counts.includes(3)) return 0.45
+  if (pairCount >= 2) return 0.35
+  if (pairCount === 1) return 0.22
+
+  return Math.max(...cards.map(card => card.rank)) / Rank.Ace * 0.2
 }
 
 /**
@@ -159,6 +181,28 @@ function isStraightDraw(cards: CardType[]): boolean {
   // 检查是否有4张连续的牌
   for (let i = 0; i <= uniqueRanks.length - 4; i++) {
     if (uniqueRanks[i + 3] - uniqueRanks[i] === 3) {
+      return true
+    }
+  }
+
+  return false
+}
+
+function isMadeStraight(cards: CardType[]): boolean {
+  const ranks = [...new Set(cards.map(c => c.rank).sort((a, b) => a - b))]
+
+  if (
+    ranks.includes(Rank.Ace) &&
+    ranks.includes(Rank.Two) &&
+    ranks.includes(Rank.Three) &&
+    ranks.includes(Rank.Four) &&
+    ranks.includes(Rank.Five)
+  ) {
+    return true
+  }
+
+  for (let i = 0; i <= ranks.length - 5; i++) {
+    if (ranks[i + 4] - ranks[i] === 4) {
       return true
     }
   }

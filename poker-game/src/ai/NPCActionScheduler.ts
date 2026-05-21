@@ -23,7 +23,7 @@ const MAX_THINK_TIME = 2000
  * 负责 NPC 行动的异步执行，模拟思考延迟
  */
 export class NPCActionScheduler {
-  private timeoutId: NodeJS.Timeout | null = null
+  private timeoutId: ReturnType<typeof setTimeout> | null = null
   private isProcessing: boolean = false
 
   /**
