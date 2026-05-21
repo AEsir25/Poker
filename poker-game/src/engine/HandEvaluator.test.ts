@@ -454,7 +454,7 @@ describe('Edge Cases (边界情况)', () => {
       card(Suit.Spades, Rank.Ten),
     ]
 
-    expect(() => evaluateHand(sixCards as any)).toThrow('exactly 7 cards')
+    expect(() => evaluateHand(sixCards)).toThrow('exactly 7 cards')
   })
 
   it('compareHands 应处理空数组', () => {

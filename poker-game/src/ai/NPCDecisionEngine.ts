@@ -27,7 +27,7 @@ export class RuleBasedDecisionEngine implements INPCDecisionEngine {
     skill: NPCAgentSkill
   ): Promise<DecisionResult> {
     const thoughtLog: string[] = []
-    const { phase, communityCards, pots, smallBlind, bigBlind, minRaise } = gameState
+    const { phase, communityCards, pots } = gameState
 
     // 1. 计算牌力
     const handStrength = getHandStrength(player.holeCards, communityCards, phase)
