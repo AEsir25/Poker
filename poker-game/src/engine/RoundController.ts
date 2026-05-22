@@ -1,7 +1,7 @@
 // engine/RoundController.ts — 轮次控制器
-import type { GameState, Player, PlayerAction, ActionLogEntry } from './types'
+import type { GameState, Player, PlayerAction, ActionLogEntry, Pot } from './types'
 import { GamePhase } from './types'
-import { validateAction, getAvailableActions } from './ActionValidator'
+import { getAvailableActions, getCurrentBetToCall } from './ActionValidator'
 import { calculatePots } from './PotCalculator'
 
 /**
@@ -49,7 +49,7 @@ export function processPlayerAction(
   action: PlayerAction,
   trackers: Map<string, PlayerActionTracker>
 ): GameState {
-  const { players, pots, phase } = state
+  const { players, phase } = state
   const playerIndex = players.findIndex(p => p.id === action.playerId)
   const player = players[playerIndex]
 
@@ -61,18 +61,11 @@ export function processPlayerAction(
     tracker.hasActed = true
   }
 
-  // 创建行动日志
-  const actionLog: ActionLogEntry = {
-    playerId: action.playerId,
-    playerName: player.name,
-    action,
-    phase,
-    potAfter: pots.reduce((sum, p) => sum + p.amount, 0),
-  }
-
-  let updatedPlayers = [...players]
-  let updatedPots = [...pots]
-  let updatedPlayer = { ...player }
+  const updatedPlayers = [...players]
+  let updatedPots = state.pots
+  const updatedPlayer = { ...player }
+  let nextMinRaise = state.minRaise
+  let nextLastRaiseAmount = state.lastRaiseAmount
 
   switch (action.type) {
     case 'FOLD':
@@ -97,10 +90,14 @@ export function processPlayerAction(
 
     case 'RAISE': {
       const raiseAmount = action.amount ?? player.currentBet + state.minRaise
+      const previousMaxBet = getCurrentBetToCall(state)
       const increment = raiseAmount - player.currentBet
+      const raiseIncrement = raiseAmount - previousMaxBet
       updatedPlayer.chips -= increment
       updatedPlayer.currentBet = raiseAmount
       updatedPlayer.totalBetThisHand += increment
+      nextMinRaise = raiseIncrement
+      nextLastRaiseAmount = raiseIncrement
       if (updatedPlayer.chips === 0) {
         updatedPlayer.isAllIn = true
       }
@@ -109,10 +106,17 @@ export function processPlayerAction(
 
     case 'ALL_IN': {
       const allInAmount = player.chips
+      const previousMaxBet = getCurrentBetToCall(state)
+      const newBet = updatedPlayer.currentBet + allInAmount
+      const raiseIncrement = newBet - previousMaxBet
       updatedPlayer.currentBet += allInAmount
       updatedPlayer.totalBetThisHand += allInAmount
       updatedPlayer.chips = 0
       updatedPlayer.isAllIn = true
+      if (raiseIncrement >= state.minRaise) {
+        nextMinRaise = raiseIncrement
+        nextLastRaiseAmount = raiseIncrement
+      }
       break
     }
   }
@@ -121,6 +125,15 @@ export function processPlayerAction(
 
   // 重新计算底池
   updatedPots = calculatePotsFromPlayers(updatedPlayers)
+
+  // 创建行动日志
+  const actionLog: ActionLogEntry = {
+    playerId: action.playerId,
+    playerName: player.name,
+    action,
+    phase,
+    potAfter: updatedPots.reduce((sum, p) => sum + p.amount, 0),
+  }
 
   // 找下一个行动玩家
   const nextPlayerIndex = getNextPlayer({
@@ -134,6 +147,8 @@ export function processPlayerAction(
     players: updatedPlayers,
     pots: updatedPots,
     currentPlayerIndex: nextPlayerIndex,
+    minRaise: nextMinRaise,
+    lastRaiseAmount: nextLastRaiseAmount,
     lastAction: actionLog,
     actionHistory: [...state.actionHistory, actionLog],
   }
@@ -143,7 +158,7 @@ export function processPlayerAction(
  * 获取跟注金额
  */
 function getCallAmount(state: GameState, player: Player): number {
-  const maxBet = Math.max(...state.players.map(p => p.currentBet))
+  const maxBet = getCurrentBetToCall(state)
   return maxBet - player.currentBet
 }
 
@@ -151,20 +166,7 @@ function getCallAmount(state: GameState, player: Player): number {
  * 从玩家状态计算底池
  */
 function calculatePotsFromPlayers(players: Player[]): Pot[] {
-  const activePlayers = players.filter(p => p.isActive && p.totalBetThisHand > 0)
-  
-  if (activePlayers.length === 0) {
-    return []
-  }
-
-  // 简化版：直接计算总底池
-  const totalAmount = activePlayers.reduce((sum, p) => sum + p.totalBetThisHand, 0)
-  
-  return [{
-    amount: totalAmount,
-    eligiblePlayerIds: activePlayers.filter(p => !p.isFolded).map(p => p.id),
-    isMainPot: true,
-  }]
+  return calculatePots(players).pots
 }
 
 /**
@@ -267,7 +269,7 @@ export function getCurrentAvailableActions(state: GameState): ReturnType<typeof 
     return []
   }
   
-  return getAvailableActions(state, currentPlayer.id)
+  return getAvailableActions(currentPlayer, state)
 }
 
 /**
