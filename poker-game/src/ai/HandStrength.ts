@@ -1,7 +1,7 @@
 // ai/HandStrength.ts — 牌力评估
-import type { Card as CardType, GameState } from '@/engine/types'
+import type { Card as CardType } from '@/engine/types'
 import { Suit, Rank, GamePhase } from '@/engine/types'
-import { evaluateHand, HandRank } from '@/engine/HandEvaluator'
+import { evaluateHand } from '@/engine/HandEvaluator'
 
 /**
  * 计算 Pre-flop 牌力（Chen Formula 简化版）
@@ -92,6 +92,11 @@ export function calculatePostFlopStrength(
   if (holeCards.length !== 2 || communityCards.length === 0) return 0
 
   const allCards = [...holeCards, ...communityCards]
+  if (allCards.length < 7) {
+    const drawScore = calculateDrawPotential(allCards) * 0.2
+    return Math.max(calculatePreFlopStrength(holeCards), drawScore)
+  }
+
   const handResult = evaluateHand(allCards)
   const handRank = handResult.rank
 

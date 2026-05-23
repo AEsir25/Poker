@@ -2,12 +2,13 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { GameSettings } from './GameSettings'
+import type { GameSettings as GameSettingsConfig } from '@/engine/types'
 
 export function LobbyPage() {
   const navigate = useNavigate()
   const [isStarting, setIsStarting] = useState(false)
 
-  const handleStartGame = async (settings: GameSettings) => {
+  const handleStartGame = async (settings: GameSettingsConfig) => {
     setIsStarting(true)
     try {
       // 将设置存入 localStorage，供游戏页面读取
