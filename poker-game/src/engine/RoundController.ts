@@ -70,9 +70,9 @@ export function processPlayerAction(
     potAfter: pots.reduce((sum, p) => sum + p.amount, 0),
   }
 
-  let updatedPlayers = [...players]
+  const updatedPlayers = [...players]
   let updatedPots = [...pots]
-  let updatedPlayer = { ...player }
+  const updatedPlayer = { ...player }
 
   switch (action.type) {
     case 'FOLD':
