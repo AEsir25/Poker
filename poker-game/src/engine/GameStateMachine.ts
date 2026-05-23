@@ -1,9 +1,9 @@
 // engine/GameStateMachine.ts — 游戏阶段状态机
-import type { GameState, Player, Pot, Card as CardType } from './types'
+import type { GameState, Pot } from './types'
 import { GamePhase } from './types'
 import { createShuffledDeck, dealCards } from './Deck'
-import { calculatePots } from './PotCalculator'
-import { evaluateAndCompare } from './HandEvaluator'
+import { allocatePots, calculatePots, determinePotWinners } from './PotCalculator'
+import { evaluateHand } from './HandEvaluator'
 
 /**
  * 游戏状态机 — 管理阶段转换
@@ -20,8 +20,8 @@ import { evaluateAndCompare } from './HandEvaluator'
  * - 设置当前行动玩家
  */
 export function startNewRound(state: GameState): GameState {
-  const deck = createShuffledDeck()
-  const players = [...state.players]
+  let deck = createShuffledDeck()
+  const players = state.players.map(player => ({ ...player, holeCards: [] }))
 
   // 重置玩家状态
   for (const player of players) {
@@ -38,8 +38,7 @@ export function startNewRound(state: GameState): GameState {
       if (player.isActive) {
         const { card, remainingDeck } = dealCards(deck, 1)
         player.holeCards.push(card[0])
-        deck.length = 0
-        deck.push(...remainingDeck)
+        deck = remainingDeck
       }
     }
   }
@@ -186,7 +185,9 @@ function resetBettingRound(state: GameState): GameState {
  * - 分配底池
  */
 export function settleRound(state: GameState): GameState {
-  const { players, communityCards, pots } = state
+  const { players, communityCards } = state
+  const calculatedPots = calculatePots(players).pots
+  const pots = calculatedPots.length > 0 ? calculatedPots : state.pots
 
   // 找出未弃牌的玩家
   const activePlayers = players.filter(p => !p.isFolded && p.isActive)
@@ -209,30 +210,29 @@ export function settleRound(state: GameState): GameState {
   }
 
   // 多人摊牌：评估手牌
-  const playerHands = activePlayers.map(player => ({
-    player,
-    cards: [...player.holeCards, ...communityCards],
+  const playerCardsMap = new Map(
+    activePlayers.map(player => [
+      player.id,
+      { holeCards: player.holeCards, communityCards },
+    ])
+  )
+
+  const winnersByPot = pots.map(pot =>
+    determinePotWinners(pot.eligiblePlayerIds, playerCardsMap, evaluateHand)
+  )
+  const allocations = allocatePots(pots, winnersByPot)
+  const winnerIds = [...new Set(winnersByPot.flat())]
+
+  const updatedPlayers = players.map(p => ({
+    ...p,
+    chips: p.chips + (allocations.get(p.id) || 0),
   }))
-
-  // 比较手牌，找出赢家
-  const winners = evaluateAndCompare(playerHands.map(h => h.cards))
-  const winnerIds = winners.map(w => playerHands[w.winnerIndex].player.id)
-
-  // 分配底池
-  const totalPot = pots.reduce((sum, pot) => sum + pot.amount, 0)
-  const winAmountPerPlayer = Math.floor(totalPot / winnerIds.length)
-
-  const updatedPlayers = players.map(p => {
-    if (winnerIds.includes(p.id)) {
-      return { ...p, chips: p.chips + winAmountPerPlayer }
-    }
-    return p
-  })
 
   return {
     ...state,
     phase: GamePhase.SETTLE,
     players: updatedPlayers,
+    pots,
     winner: winnerIds,
   }
 }

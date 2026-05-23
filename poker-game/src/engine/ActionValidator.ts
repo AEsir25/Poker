@@ -14,13 +14,13 @@ export interface ActionValidationResult {
  * 获取当前需要匹配的最低下注额
  */
 export function getCurrentBetToCall(gameState: GameState): number {
-  const activePlayers = gameState.players.filter(
-    (p) => p.isActive && !p.isFolded && !p.isAllIn
+  const contributingPlayers = gameState.players.filter(
+    (p) => p.isActive && !p.isFolded
   )
 
-  if (activePlayers.length === 0) return 0
+  if (contributingPlayers.length === 0) return 0
 
-  return Math.max(...activePlayers.map((p) => p.currentBet))
+  return Math.max(...contributingPlayers.map((p) => p.currentBet))
 }
 
 /**
@@ -193,7 +193,15 @@ export function validateRaise(
     }
   }
 
-  const totalBetAfterRaise = player.currentBet + action.amount
+  const totalBetAfterRaise = action.amount
+  const increment = totalBetAfterRaise - player.currentBet
+
+  if (increment <= 0) {
+    return {
+      isValid: false,
+      errorMessage: '加注总额必须高于当前下注额',
+    }
+  }
 
   // 加注后总额必须 ≥ 当前最高注 + 最小加注增量
   if (totalBetAfterRaise < maxBet + minRaise) {
@@ -204,7 +212,7 @@ export function validateRaise(
   }
 
   // 检查筹码是否足够
-  if (player.chips < action.amount) {
+  if (player.chips < increment) {
     return {
       isValid: false,
       errorMessage: '筹码不足',

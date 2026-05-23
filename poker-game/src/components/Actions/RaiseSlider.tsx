@@ -1,22 +1,17 @@
 // components/Actions/RaiseSlider.tsx — 加注金额滑块
 interface RaiseSliderProps {
-  minRaise: number
-  maxChips: number
-  currentBet: number
+  minRaiseTotal: number
+  maxRaiseTotal: number
   value: number
   onChange: (value: number) => void
 }
 
 export function RaiseSlider({
-  minRaise,
-  maxChips,
-  currentBet,
+  minRaiseTotal,
+  maxRaiseTotal,
   value,
   onChange,
 }: RaiseSliderProps) {
-  const minRaiseTotal = currentBet + minRaise
-  const maxRaiseTotal = currentBet + maxChips
-
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onChange(Number(e.target.value))
   }
