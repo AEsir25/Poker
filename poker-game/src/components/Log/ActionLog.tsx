@@ -10,7 +10,7 @@ export function ActionLog() {
 
   // 获取行动描述
   const getActionDescription = (entry: typeof actionHistory[0]) => {
-    const { playerName, action, potAfter } = entry
+    const { playerName, action } = entry
     switch (action.type) {
       case 'FOLD':
         return `${playerName} 弃牌`

@@ -1,5 +1,5 @@
 // engine/GameStateMachine.ts — 游戏阶段状态机
-import type { GameState, Pot } from './types'
+import type { GameState, Player, Pot } from './types'
 import { GamePhase } from './types'
 import { createShuffledDeck, dealCards } from './Deck'
 import { allocatePots, calculatePots, determinePotWinners } from './PotCalculator'
@@ -21,7 +21,7 @@ import { evaluateHand } from './HandEvaluator'
  */
 export function startNewRound(state: GameState): GameState {
   let deck = createShuffledDeck()
-  const players = state.players.map(player => ({ ...player, holeCards: [] }))
+  const players = state.players.map<Player>(player => ({ ...player, holeCards: [] }))
 
   // 重置玩家状态
   for (const player of players) {
@@ -97,7 +97,7 @@ export function startNewRound(state: GameState): GameState {
  * 推进阶段：PRE_FLOP → FLOP → TURN → RIVER → SHOWDOWN
  */
 export function advancePhase(state: GameState): GameState {
-  const { phase, deck, players, pots } = state
+  const { phase, deck } = state
 
   switch (phase) {
     case GamePhase.PRE_FLOP: {

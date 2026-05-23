@@ -115,14 +115,8 @@ export const useGameStore = create<GameStore>()(
 
     // 开始新一手牌
     startRound: () => {
-      const { gameState, actionTrackers } = get()
+      const { gameState } = get()
       if (!gameState) return
-      const nextTrackers = new Map(
-        [...actionTrackers].map(([playerId, tracker]) => [
-          playerId,
-          { ...tracker },
-        ])
-      )
 
       const newState = startNewRound(gameState)
       const newTrackers = initActionTrackers(newState.players)
@@ -137,6 +131,12 @@ export const useGameStore = create<GameStore>()(
     submitAction: (action) => {
       const { gameState, actionTrackers } = get()
       if (!gameState) return
+      const nextTrackers = new Map(
+        [...actionTrackers].map(([playerId, tracker]) => [
+          playerId,
+          { ...tracker },
+        ])
+      )
 
       // 验证行动
       const currentPlayer = gameState.players[gameState.currentPlayerIndex]

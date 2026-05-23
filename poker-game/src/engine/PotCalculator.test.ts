@@ -279,10 +279,10 @@ describe('Pot Allocation (底池分配)', () => {
 
 // ==================== 边界测试 ====================
 describe('Edge Cases (边界情况)', () => {
-  it('没有活跃玩家应返回空底池', () => {
+  it('没有玩家投入筹码应返回空底池', () => {
     const players: Player[] = [
-      createPlayer('A', 100, false, false), // 非活跃
-      createPlayer('B', 100, true, true),   // 弃牌
+      createPlayer('A', 0, false, false), // 非活跃
+      createPlayer('B', 0, true, true),   // 弃牌
     ]
 
     const result = calculatePots(players)
