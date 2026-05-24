@@ -177,16 +177,17 @@ describe('Multiple Players All-in (多人 All-in)', () => {
 
 // ==================== 弃牌玩家测试 ====================
 describe('Folded Players (弃牌玩家)', () => {
-  it('弃牌玩家不应计入底池', () => {
+  it('弃牌玩家的已投入筹码应留在底池，但没有争夺资格', () => {
     const players: Player[] = [
       createPlayer('A', 100, true, false), // 活跃
-      createPlayer('B', 100, true, true),  // 弃牌 - 不应计入
+      createPlayer('B', 100, true, true),  // 弃牌 - 筹码留在底池
       createPlayer('C', 100, true, false), // 活跃
     ]
 
     const result = calculatePots(players)
 
-    expect(result.totalPot).toBe(200) // 只有 A 和 C 的 100
+    expect(result.totalPot).toBe(300)
+    expect(result.pots[0].amount).toBe(300)
     expect(result.pots[0].eligiblePlayerIds).toEqual(['A', 'C'])
   })
 
@@ -247,19 +248,19 @@ describe('Pot Allocation (底池分配)', () => {
     expect(allocations.get('B')).toBe(75)
   })
 
-  it('奇数筹码应分配给第一个有资格的玩家', () => {
+  it('奇数筹码应分配给第一个获胜且有资格的玩家', () => {
     const pots = [
-      { amount: 100, eligiblePlayerIds: ['A', 'B', 'C'], isMainPot: true },
+      { amount: 101, eligiblePlayerIds: ['A', 'B', 'C'], isMainPot: true },
     ]
 
-    // 三人平分 100，每人 33，余 1
-    const winnersByPot = [['A', 'B', 'C']]
+    // A 有资格但未获胜，余数不能发给 A。
+    const winnersByPot = [['B', 'C']]
 
     const allocations = allocatePots(pots, winnersByPot)
 
-    expect(allocations.get('A')).toBe(34) // 33 + 1（余数）
-    expect(allocations.get('B')).toBe(33)
-    expect(allocations.get('C')).toBe(33)
+    expect(allocations.get('A')).toBeUndefined()
+    expect(allocations.get('B')).toBe(51)
+    expect(allocations.get('C')).toBe(50)
   })
 })
 

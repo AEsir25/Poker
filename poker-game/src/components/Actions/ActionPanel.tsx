@@ -26,7 +26,8 @@ export function ActionPanel() {
     )
   }
 
-  const availableActions = getAvailableActions(gameState, currentPlayer.id)
+  const availableActions = getAvailableActions(currentPlayer, gameState)
+  const currentMaxBet = Math.max(...gameState.players.map(p => p.currentBet))
 
   const handleAction = (type: ActionType, amount?: number) => {
     submitAction({
@@ -40,7 +41,7 @@ export function ActionPanel() {
 
   const handleRaise = () => {
     setShowRaiseSlider(true)
-    setRaiseAmount(currentPlayer.currentBet + gameState.minRaise)
+    setRaiseAmount(currentMaxBet + gameState.minRaise)
   }
 
   const confirmRaise = () => {
@@ -55,7 +56,7 @@ export function ActionPanel() {
 
   // 计算跟注金额
   const callAmount = Math.min(
-    Math.max(...gameState.players.map(p => p.currentBet)) - currentPlayer.currentBet,
+    currentMaxBet - currentPlayer.currentBet,
     currentPlayer.chips
   )
 
@@ -64,7 +65,7 @@ export function ActionPanel() {
       {showRaiseSlider ? (
         <div className="space-y-4">
           <RaiseSlider
-            minRaise={gameState.minRaise}
+            minRaise={currentMaxBet + gameState.minRaise - currentPlayer.currentBet}
             maxChips={currentPlayer.chips}
             currentBet={currentPlayer.currentBet}
             value={raiseAmount}

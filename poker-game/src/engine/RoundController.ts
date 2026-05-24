@@ -1,7 +1,7 @@
 // engine/RoundController.ts — 轮次控制器
 import type { GameState, Player, PlayerAction, ActionLogEntry } from './types'
 import { GamePhase } from './types'
-import { validateAction, getAvailableActions } from './ActionValidator'
+import { getAvailableActions, getCurrentBetToCall } from './ActionValidator'
 import { calculatePots } from './PotCalculator'
 
 /**
@@ -70,9 +70,9 @@ export function processPlayerAction(
     potAfter: pots.reduce((sum, p) => sum + p.amount, 0),
   }
 
-  let updatedPlayers = [...players]
+  const updatedPlayers = [...players]
   let updatedPots = [...pots]
-  let updatedPlayer = { ...player }
+  const updatedPlayer = { ...player }
 
   switch (action.type) {
     case 'FOLD':
@@ -120,7 +120,7 @@ export function processPlayerAction(
   updatedPlayers[playerIndex] = updatedPlayer
 
   // 重新计算底池
-  updatedPots = calculatePotsFromPlayers(updatedPlayers)
+  updatedPots = calculatePots(updatedPlayers).pots
 
   // 找下一个行动玩家
   const nextPlayerIndex = getNextPlayer({
@@ -148,26 +148,6 @@ function getCallAmount(state: GameState, player: Player): number {
 }
 
 /**
- * 从玩家状态计算底池
- */
-function calculatePotsFromPlayers(players: Player[]): Pot[] {
-  const activePlayers = players.filter(p => p.isActive && p.totalBetThisHand > 0)
-  
-  if (activePlayers.length === 0) {
-    return []
-  }
-
-  // 简化版：直接计算总底池
-  const totalAmount = activePlayers.reduce((sum, p) => sum + p.totalBetThisHand, 0)
-  
-  return [{
-    amount: totalAmount,
-    eligiblePlayerIds: activePlayers.filter(p => !p.isFolded).map(p => p.id),
-    isMainPot: true,
-  }]
-}
-
-/**
  * 判断当前下注轮是否结束
  */
 export function isRoundComplete(
@@ -186,9 +166,9 @@ export function isRoundComplete(
     return true
   }
 
-  // 检查所有活跃玩家的下注是否相等
-  const bets = activePlayers.map(p => p.currentBet)
-  const allBetsEqual = bets.every(b => b === bets[0])
+  // All-in 玩家无法继续行动，但他们的下注仍可能是其他玩家必须匹配的最高注。
+  const currentBetToCall = getCurrentBetToCall(state)
+  const allBetsEqual = activePlayers.every(p => p.currentBet === currentBetToCall)
 
   // 检查所有活跃玩家是否都已行动
   const allActed = activePlayers.every(p => {
@@ -267,7 +247,7 @@ export function getCurrentAvailableActions(state: GameState): ReturnType<typeof 
     return []
   }
   
-  return getAvailableActions(state, currentPlayer.id)
+  return getAvailableActions(currentPlayer, state)
 }
 
 /**

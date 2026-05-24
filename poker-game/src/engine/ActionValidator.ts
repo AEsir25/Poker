@@ -15,7 +15,7 @@ export interface ActionValidationResult {
  */
 export function getCurrentBetToCall(gameState: GameState): number {
   const activePlayers = gameState.players.filter(
-    (p) => p.isActive && !p.isFolded && !p.isAllIn
+    (p) => p.isActive && !p.isFolded
   )
 
   if (activePlayers.length === 0) return 0
@@ -27,16 +27,15 @@ export function getCurrentBetToCall(gameState: GameState): number {
  * 检查是否所有活跃玩家都已下注到同一金额
  */
 export function areBetsEqual(gameState: GameState): boolean {
-  const activePlayers = gameState.players.filter(
+  const actionablePlayers = gameState.players.filter(
     (p) => p.isActive && !p.isFolded && !p.isAllIn
   )
 
-  if (activePlayers.length <= 1) return true
+  if (actionablePlayers.length <= 1) return true
 
-  const bets = activePlayers.map((p) => p.currentBet)
-  const firstBet = bets[0]
+  const currentBetToCall = getCurrentBetToCall(gameState)
 
-  return bets.every((bet) => bet === firstBet)
+  return actionablePlayers.every((player) => player.currentBet === currentBetToCall)
 }
 
 /**
@@ -81,6 +80,8 @@ export function validateFold(
   player: Player,
   _gameState: GameState
 ): ActionValidationResult {
+  void _gameState
+
   if (!player.isActive) {
     return {
       isValid: false,
@@ -146,7 +147,7 @@ export function validateCall(
   player: Player,
   gameState: GameState
 ): ActionValidationResult {
-  if (!player.isActive || player.isFolded) {
+  if (!player.isActive || player.isFolded || player.isAllIn) {
     return {
       isValid: false,
       errorMessage: '玩家不能跟注',
@@ -193,7 +194,15 @@ export function validateRaise(
     }
   }
 
-  const totalBetAfterRaise = player.currentBet + action.amount
+  const totalBetAfterRaise = action.amount
+  const additionalChipsRequired = totalBetAfterRaise - player.currentBet
+
+  if (additionalChipsRequired <= 0) {
+    return {
+      isValid: false,
+      errorMessage: '加注金额必须高于当前下注',
+    }
+  }
 
   // 加注后总额必须 ≥ 当前最高注 + 最小加注增量
   if (totalBetAfterRaise < maxBet + minRaise) {
@@ -204,7 +213,7 @@ export function validateRaise(
   }
 
   // 检查筹码是否足够
-  if (player.chips < action.amount) {
+  if (player.chips < additionalChipsRequired) {
     return {
       isValid: false,
       errorMessage: '筹码不足',
@@ -237,6 +246,8 @@ export function validateAllIn(
   player: Player,
   _gameState: GameState
 ): ActionValidationResult {
+  void _gameState
+
   if (!player.isActive || player.isFolded) {
     return {
       isValid: false,

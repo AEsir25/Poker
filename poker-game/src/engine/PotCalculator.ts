@@ -22,75 +22,36 @@ export interface PotCalculationResult {
  * - A All-in 50，B All-in 100，C 跟注 150 → 主池 150（A/B/C 各出 50），边池 100（A/B 各出 50），边池 50（仅 B 有资格）
  */
 export function calculatePots(players: Player[]): PotCalculationResult {
-  const activePlayers = players.filter((p) => p.isActive && !p.isFolded)
+  const eligiblePlayers = players.filter((p) => p.isActive && !p.isFolded)
+  const contributors = players.filter((p) => p.isActive && p.totalBetThisHand > 0)
 
-  if (activePlayers.length === 0) {
+  if (contributors.length === 0 || eligiblePlayers.length === 0) {
     return { pots: [], totalPot: 0 }
   }
 
   // 获取所有玩家在本手的总下注额
-  const bets = activePlayers.map((p) => p.totalBetThisHand)
+  const betLevels = Array.from(new Set(contributors.map((p) => p.totalBetThisHand))).sort((a, b) => a - b)
 
-  // 按下注额从小到大排序（用于创建边池）
-  const sortedBets = [...bets].sort((a, b) => a - b)
-  const minBet = sortedBets[0]
+  const pots: Pot[] = []
+  let previousLevel = 0
 
-  // 检查是否有人 All-in（所有人的下注额不完全相同）
-  const hasAllIn = new Set(bets).size > 1
+  for (let i = 0; i < betLevels.length; i++) {
+    const level = betLevels[i]
+    const layerAmount = level - previousLevel
 
-  // 计算主池：每个玩家出 minBet，形成主池
-  const mainPotAmount = minBet * activePlayers.length
+    if (layerAmount <= 0) continue
 
-  // 主池有资格的玩家：所有活跃玩家
-  const mainPotEligible = activePlayers
-    .filter((p) => p.totalBetThisHand >= minBet)
-    .map((p) => p.id)
+    const contributorsInLayer = contributors.filter((p) => p.totalBetThisHand >= level)
+    const eligiblePlayerIds = contributorsInLayer
+      .filter((p) => !p.isFolded)
+      .map((p) => p.id)
 
-  const pots: Pot[] = [
-    {
-      amount: mainPotAmount,
-      eligiblePlayerIds: mainPotEligible,
-      isMainPot: true,
-    },
-  ]
-
-  // 如果没有人 All-in（所有人下注相同），只有主池
-  if (!hasAllIn) {
-    const totalPot = bets.reduce((sum, bet) => sum + bet, 0)
-    return { pots, totalPot }
-  }
-
-  // 计算边池（只有有人 All-in 时才需要）
-  let accumulatedBet = minBet
-
-  for (let i = 1; i < sortedBets.length; i++) {
-    const currentBet = sortedBets[i]
-    const betDifference = currentBet - accumulatedBet
-
-    if (betDifference > 0) {
-      // 有多少玩家参与了当前这层下注
-      // 只有下注额严格大于 accumulatedBet 的玩家才参与此层
-      const playersInThisLayer = activePlayers.filter(
-        (p) => p.totalBetThisHand > accumulatedBet
-      ).length
-
-      const sidePotAmount = betDifference * playersInThisLayer
-
-      // 边池有资格的玩家：下注超过 accumulatedBet 的玩家
-      const sidePotEligible = activePlayers
-        .filter((p) => p.totalBetThisHand > accumulatedBet)
-        .map((p) => p.id)
-
-      if (sidePotAmount > 0) {
-        pots.push({
-          amount: sidePotAmount,
-          eligiblePlayerIds: sidePotEligible,
-          isMainPot: false,
-        })
-      }
-
-      accumulatedBet = currentBet
-    }
+    pots.push({
+      amount: layerAmount * contributorsInLayer.length,
+      eligiblePlayerIds,
+      isMainPot: i === 0,
+    })
+    previousLevel = level
   }
 
   const totalPot = pots.reduce((sum, pot) => sum + pot.amount, 0)
@@ -139,11 +100,13 @@ export function allocatePots(
     // 处理奇数筹码（向下取整后的余数）
     const remainder = pot.amount % winners.length
     if (remainder > 0 && winners.length > 0) {
-      // 奇数筹码分配给庄家后第一位有资格的玩家
-      const firstEligible = pot.eligiblePlayerIds[0]
-      if (firstEligible) {
-        const current = allocations.get(firstEligible) || 0
-        allocations.set(firstEligible, current + remainder)
+      // 奇数筹码分配给此池赢家中最靠前的有资格玩家，不能给输家。
+      const firstEligibleWinner = pot.eligiblePlayerIds.find((playerId) =>
+        winners.includes(playerId)
+      )
+      if (firstEligibleWinner) {
+        const current = allocations.get(firstEligibleWinner) || 0
+        allocations.set(firstEligibleWinner, current + remainder)
       }
     }
   }

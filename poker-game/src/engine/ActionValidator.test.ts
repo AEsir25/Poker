@@ -1,7 +1,7 @@
 // engine/ActionValidator.test.ts — 行动验证测试
 import { describe, it, expect } from 'vitest'
-import type { GameState, Player } from '@/engine/types'
-import { GamePhase, Rank, Suit } from '@/engine/types'
+import type { GameState, Player, PlayerAction } from '@/engine/types'
+import { GamePhase } from '@/engine/types'
 import {
   validateFold,
   validateCheck,
@@ -11,7 +11,6 @@ import {
   validateAction,
   getAvailableActions,
   getCurrentBetToCall,
-  hasBigBlindOption,
 } from '@/engine/ActionValidator'
 
 /**
@@ -176,6 +175,21 @@ describe('Check (过牌)', () => {
 
     expect(result.isValid).toBe(false)
   })
+
+  it('面对 All-in 最高注时，未匹配玩家不能过牌', () => {
+    const player = createPlayer({ id: 'p1', currentBet: 50 })
+    const allInPlayer = createPlayer({ id: 'p2', currentBet: 100, isAllIn: true })
+    const gameState = createGameState({ players: [player, allInPlayer] })
+
+    const result = validateCheck(
+      { type: 'CHECK', playerId: player.id, timestamp: Date.now() },
+      player,
+      gameState
+    )
+
+    expect(result.isValid).toBe(false)
+    expect(result.errorMessage).toContain('有未匹配的下注')
+  })
 })
 
 // ==================== Call 测试 ====================
@@ -225,6 +239,22 @@ describe('Call (跟注)', () => {
 
     expect(result.isValid).toBe(false)
   })
+
+  it('All-in 玩家不能继续跟注', () => {
+    const player = createPlayer({ currentBet: 50, isAllIn: true })
+    const otherPlayer = createPlayer({ id: 'player2', currentBet: 100 })
+    const gameState = createGameState({
+      players: [player, otherPlayer],
+    })
+
+    const result = validateCall(
+      { type: 'CALL', playerId: player.id, timestamp: Date.now() },
+      player,
+      gameState
+    )
+
+    expect(result.isValid).toBe(false)
+  })
 })
 
 // ==================== Raise 测试 ====================
@@ -237,9 +267,9 @@ describe('Raise (加注)', () => {
       minRaise: 20,
     })
 
-    // 最低需要加注到 100 + 20 = 120，即额外下注 70
+    // 最低需要加注到 100 + 20 = 120
     const result = validateRaise(
-      { type: 'RAISE', playerId: player.id, timestamp: Date.now(), amount: 70 },
+      { type: 'RAISE', playerId: player.id, timestamp: Date.now(), amount: 120 },
       player,
       gameState
     )
@@ -255,9 +285,9 @@ describe('Raise (加注)', () => {
       minRaise: 20,
     })
 
-    // 只加注 20（到 70），但最低需要到 120
+    // 加注到 119，但最低需要到 120
     const result = validateRaise(
-      { type: 'RAISE', playerId: player.id, timestamp: Date.now(), amount: 20 },
+      { type: 'RAISE', playerId: player.id, timestamp: Date.now(), amount: 119 },
       player,
       gameState
     )
@@ -275,7 +305,7 @@ describe('Raise (加注)', () => {
     })
 
     const result = validateRaise(
-      { type: 'RAISE', playerId: player.id, timestamp: Date.now(), amount: 100 },
+      { type: 'RAISE', playerId: player.id, timestamp: Date.now(), amount: 200 },
       player,
       gameState
     )
@@ -302,7 +332,7 @@ describe('Raise (加注)', () => {
     })
 
     const result = validateRaise(
-      { type: 'RAISE', playerId: player.id, timestamp: Date.now(), amount: 70 },
+      { type: 'RAISE', playerId: player.id, timestamp: Date.now(), amount: 120 },
       player,
       gameState,
       { maxRaisesPerRound: 1 } // 只允许 1 次加注
@@ -386,11 +416,13 @@ describe('validateAction (统一验证)', () => {
     const player = createPlayer()
     const gameState = createGameState()
 
-    const result = validateAction(
-      { type: 'UNKNOWN' as any, playerId: player.id, timestamp: Date.now() },
-      player,
-      gameState
-    )
+    const unknownAction = {
+      type: 'UNKNOWN',
+      playerId: player.id,
+      timestamp: Date.now(),
+    } as unknown as PlayerAction
+
+    const result = validateAction(unknownAction, player, gameState)
 
     expect(result.isValid).toBe(false)
     expect(result.errorMessage).toContain('未知的行动类型')
@@ -410,14 +442,14 @@ describe('Helper Functions (辅助函数)', () => {
     expect(getCurrentBetToCall(gameState)).toBe(100)
   })
 
-  it('getCurrentBetToCall 应跳过 All-in 玩家', () => {
+  it('getCurrentBetToCall 应包含 All-in 玩家未被匹配的下注', () => {
     const players = [
       createPlayer({ id: 'p1', currentBet: 100, isAllIn: true }),
-      createPlayer({ id: 'p2', currentBet: 150 }),
+      createPlayer({ id: 'p2', currentBet: 50 }),
     ]
     const gameState = createGameState({ players })
 
-    expect(getCurrentBetToCall(gameState)).toBe(150)
+    expect(getCurrentBetToCall(gameState)).toBe(100)
   })
 
   it('getCurrentBetToCall 应跳过弃牌玩家', () => {

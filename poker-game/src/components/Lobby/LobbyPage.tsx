@@ -1,13 +1,14 @@
 // components/Lobby/LobbyPage.tsx — 大厅页
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import type { GameSettings as GameSettingsType } from '@/engine/types'
 import { GameSettings } from './GameSettings'
 
 export function LobbyPage() {
   const navigate = useNavigate()
   const [isStarting, setIsStarting] = useState(false)
 
-  const handleStartGame = async (settings: GameSettings) => {
+  const handleStartGame = async (settings: GameSettingsType) => {
     setIsStarting(true)
     try {
       // 将设置存入 localStorage，供游戏页面读取
