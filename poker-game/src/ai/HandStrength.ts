@@ -1,7 +1,7 @@
 // ai/HandStrength.ts — 牌力评估
-import type { Card as CardType, GameState } from '@/engine/types'
+import type { Card as CardType } from '@/engine/types'
 import { Suit, Rank, GamePhase } from '@/engine/types'
-import { evaluateHand, HandRank } from '@/engine/HandEvaluator'
+import { evaluateHand } from '@/engine/HandEvaluator'
 
 /**
  * 计算 Pre-flop 牌力（Chen Formula 简化版）
@@ -92,6 +92,10 @@ export function calculatePostFlopStrength(
   if (holeCards.length !== 2 || communityCards.length === 0) return 0
 
   const allCards = [...holeCards, ...communityCards]
+  if (allCards.length < 7) {
+    return calculatePartialPostFlopStrength(allCards)
+  }
+
   const handResult = evaluateHand(allCards)
   const handRank = handResult.rank
 
@@ -102,6 +106,42 @@ export function calculatePostFlopStrength(
   const drawPotential = calculateDrawPotential(allCards)
   score += drawPotential * 0.2 // 最多加 0.2
 
+  return Math.max(0, Math.min(1, score))
+}
+
+function calculatePartialPostFlopStrength(cards: CardType[]): number {
+  const rankCounts = new Map<number, number>()
+  const suitCounts: Record<Suit, number> = {
+    [Suit.Hearts]: 0,
+    [Suit.Diamonds]: 0,
+    [Suit.Clubs]: 0,
+    [Suit.Spades]: 0,
+  }
+
+  for (const card of cards) {
+    rankCounts.set(card.rank, (rankCounts.get(card.rank) || 0) + 1)
+    suitCounts[card.suit]++
+  }
+
+  const counts = Array.from(rankCounts.values()).sort((a, b) => b - a)
+  const pairCount = counts.filter((count) => count === 2).length
+  let score = 0.1
+
+  if (Object.values(suitCounts).some((count) => count >= 5) || hasMadeStraight(cards)) {
+    score = 0.5
+  } else if (counts[0] === 4) {
+    score = 0.8
+  } else if (counts[0] === 3 && pairCount >= 1) {
+    score = 0.7
+  } else if (counts[0] === 3) {
+    score = 0.4
+  } else if (pairCount >= 2) {
+    score = 0.3
+  } else if (pairCount === 1) {
+    score = 0.2
+  }
+
+  score += calculateDrawPotential(cards) * 0.2
   return Math.max(0, Math.min(1, score))
 }
 
@@ -159,6 +199,28 @@ function isStraightDraw(cards: CardType[]): boolean {
   // 检查是否有4张连续的牌
   for (let i = 0; i <= uniqueRanks.length - 4; i++) {
     if (uniqueRanks[i + 3] - uniqueRanks[i] === 3) {
+      return true
+    }
+  }
+
+  return false
+}
+
+function hasMadeStraight(cards: CardType[]): boolean {
+  const uniqueRanks = Array.from(new Set(cards.map(c => c.rank))).sort((a, b) => a - b)
+
+  if (
+    uniqueRanks.includes(Rank.Ace) &&
+    uniqueRanks.includes(Rank.Two) &&
+    uniqueRanks.includes(Rank.Three) &&
+    uniqueRanks.includes(Rank.Four) &&
+    uniqueRanks.includes(Rank.Five)
+  ) {
+    return true
+  }
+
+  for (let i = 0; i <= uniqueRanks.length - 5; i++) {
+    if (uniqueRanks[i + 4] - uniqueRanks[i] === 4) {
       return true
     }
   }

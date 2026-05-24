@@ -9,7 +9,7 @@ interface CommunityCardsProps {
 
 export function CommunityCards({ cards }: CommunityCardsProps) {
   // 始终显示 5 个位置，未发的牌显示牌背
-  const displayCards = [...cards]
+  const displayCards: (CardType | null)[] = [...cards]
   while (displayCards.length < 5) {
     displayCards.push(null)
   }
