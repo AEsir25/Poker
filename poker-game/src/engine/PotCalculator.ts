@@ -22,9 +22,10 @@ export interface PotCalculationResult {
  * - A All-in 50，B All-in 100，C 跟注 150 → 主池 150（A/B/C 各出 50），边池 100（A/B 各出 50），边池 50（仅 B 有资格）
  */
 export function calculatePots(players: Player[]): PotCalculationResult {
+  const eligiblePlayers = players.filter((p) => p.isActive && !p.isFolded)
   const contributors = players.filter((p) => p.isActive && p.totalBetThisHand > 0)
 
-  if (contributors.length === 0) {
+  if (contributors.length === 0 || eligiblePlayers.length === 0) {
     return { pots: [], totalPot: 0 }
   }
 

@@ -80,6 +80,8 @@ export function validateFold(
   player: Player,
   _gameState: GameState
 ): ActionValidationResult {
+  void _gameState
+
   if (!player.isActive) {
     return {
       isValid: false,
@@ -244,6 +246,8 @@ export function validateAllIn(
   player: Player,
   _gameState: GameState
 ): ActionValidationResult {
+  void _gameState
+
   if (!player.isActive || player.isFolded) {
     return {
       isValid: false,

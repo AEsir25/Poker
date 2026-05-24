@@ -1,6 +1,6 @@
 // engine/ActionValidator.test.ts — 行动验证测试
 import { describe, it, expect } from 'vitest'
-import type { GameState, Player } from '@/engine/types'
+import type { GameState, Player, PlayerAction } from '@/engine/types'
 import { GamePhase } from '@/engine/types'
 import {
   validateFold,
@@ -416,11 +416,13 @@ describe('validateAction (统一验证)', () => {
     const player = createPlayer()
     const gameState = createGameState()
 
-    const result = validateAction(
-      { type: 'UNKNOWN' as any, playerId: player.id, timestamp: Date.now() },
-      player,
-      gameState
-    )
+    const unknownAction = {
+      type: 'UNKNOWN',
+      playerId: player.id,
+      timestamp: Date.now(),
+    } as unknown as PlayerAction
+
+    const result = validateAction(unknownAction, player, gameState)
 
     expect(result.isValid).toBe(false)
     expect(result.errorMessage).toContain('未知的行动类型')
